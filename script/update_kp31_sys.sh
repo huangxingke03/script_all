@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 DEVICE_SERIAL=""
 TARGET_BRANCH="al_chery-kp31_dev"
 REPO_DIR="/home/huangxingke/work/code/workCode/JETOUR_D01_IFLYTEK"
@@ -43,23 +45,45 @@ ensure_device_ready() {
 }
 
 run_adb_root() {
-    adb_cmd root
-    if [ $? -ne 0 ]; then
+    adb_cmd root || {
         echo "❌ adb root 失败！请确认设备已 Root"
         exit 1
-    fi
+    }
 }
 
 run_adb_remount() {
-    adb_cmd remount
-    if [ $? -ne 0 ]; then
+    local remount_output
+
+    remount_output=$(adb_cmd remount 2>&1) || {
+        printf '%s\n' "${remount_output}"
         echo "❌ adb remount 失败！"
         exit 1
-    fi
+    }
+
+    printf '%s\n' "${remount_output}"
 }
 
-ensure_target_branch() {
+ensure_system_writable() {
+    adb_cmd shell 'touch /system/.update_kp31_sys_write_test && rm -f /system/.update_kp31_sys_write_test' >/dev/null 2>&1 || {
+        echo "❌ /system 仍为只读，无法推送系统 APK。"
+        echo "请先确认设备支持 adb remount，或先执行 adb disable-verity && adb reboot。"
+        exit 1
+    }
+}
+
+push_path() {
+    local source_path="$1"
+    local target_path="$2"
+
+    adb_cmd push "${source_path}" "${target_path}" || {
+        echo "❌ 推送失败: ${source_path} -> ${target_path}"
+        exit 1
+    }
+}
+
+ensure_target_branch_latest() {
     local current_branch
+    local untracked_count
 
     cd "${REPO_DIR}" || {
         echo "错误: 无法进入仓库目录 ${REPO_DIR}"
@@ -73,18 +97,35 @@ ensure_target_branch() {
     fi
 
     echo "切换到 ：JETOUR_D01_IFLYTEK根目录"
-    if [ "${current_branch}" = "${TARGET_BRANCH}" ]; then
-        echo "当前已在目标分支 ${TARGET_BRANCH}，无需切换"
-        return 0
-    fi
+    echo "开始获取 ${TARGET_BRANCH} 远端最新代码..."
 
-    echo "当前分支为 ${current_branch}，开始切换到 ${TARGET_BRANCH}"
-    git checkout "${TARGET_BRANCH}" || {
-        echo "错误: 切换到分支 ${TARGET_BRANCH} 失败，已停止后续推包"
+    git fetch origin "${TARGET_BRANCH}" || {
+        echo "错误: 获取远端分支 ${TARGET_BRANCH} 失败"
         exit 1
     }
 
-    echo "已切换到目标分支 ${TARGET_BRANCH}"
+    if [ "${current_branch}" != "${TARGET_BRANCH}" ]; then
+        echo "当前分支为 ${current_branch}，强制切换到 ${TARGET_BRANCH}"
+        git checkout -f "${TARGET_BRANCH}" || {
+            echo "错误: 切换到分支 ${TARGET_BRANCH} 失败，请检查是否有未跟踪文件冲突"
+            exit 1
+        }
+    else
+        echo "当前已在目标分支 ${TARGET_BRANCH}"
+    fi
+
+    echo "本地已跟踪修改将被远端覆盖..."
+    git reset --hard "origin/${TARGET_BRANCH}" || {
+        echo "错误: 重置到 origin/${TARGET_BRANCH} 失败"
+        exit 1
+    }
+
+    untracked_count=$(git ls-files --others --exclude-standard | wc -l)
+    if [ "${untracked_count}" -gt 0 ]; then
+        echo "提示: 仓库仍有 ${untracked_count} 个未跟踪文件，未做删除。"
+    fi
+
+    echo "已同步到 origin/${TARGET_BRANCH} 最新代码"
 }
 
 while getopts ":s:h" opt; do
@@ -112,17 +153,20 @@ shift $((OPTIND - 1))
 
 ensure_device_ready
 
+echo "=== 开始同步 ${TARGET_BRANCH} 最新代码 ==="
+ensure_target_branch_latest
+
 echo "=== 开始推送 讯飞资源 到系统 ==="
 
 run_adb_root
 run_adb_remount
-ensure_target_branch
+ensure_system_writable
 
 echo "🗑️   删除旧 Iflytek 资源..."
 adb_cmd shell rm -rf /iflytek/iflytek/res
 
 echo "📤  推送新 Iflytek 资源..."
-adb_cmd push /home/huangxingke/work/code/workCode/JETOUR_D01_IFLYTEK/KP31/iflytek/res /iflytek/iflytek/res
+push_path /home/huangxingke/work/code/workCode/JETOUR_D01_IFLYTEK/KP31/iflytek/res /iflytek/iflytek/res
 adb_cmd shell chmod -R 777 /iflytek/iflytek/*
 
 echo "更新 ：/iflytek/iflytek/res ---》成功"
@@ -131,12 +175,14 @@ echo "=== 开始推送 讯飞APK 到系统 ==="
 
 run_adb_root
 run_adb_remount
+ensure_system_writable
 
 echo "🗑️   删除旧 Iflytek 应用..."
 adb_cmd shell rm -rf /system/app/Iflytek*
 
 echo "📤  推送新 APK..."
-adb_cmd push /home/huangxingke/work/code/workCode/JETOUR_D01_IFLYTEK/KP31/system/app /system/
+push_path /home/huangxingke/work/code/workCode/JETOUR_D01_IFLYTEK/KP31/system/app /system/
+adb_cmd shell sync
 
 echo "清除语音设置，讯飞侧应用缓存..."
 adb_cmd shell pm clear com.iflytek.cutefly.speechclient.hmi

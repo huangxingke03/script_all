@@ -84,10 +84,28 @@
 - Variant: `updateKp31sys`
 - Variant: `updatekp31sys`
 
+## Rename USB Dir
+- Standard: `renameUsbDir`
+- Variant: `renameusbDir`
+- Variant: `renameUsbdir`
+- Variant: `renameusbdir`
+- Variant: `rename_usb_dir`
+
+## Virt Manager
+- Standard: `virtManager`
+- Variant: `virtmanager`
+- Variant: `startVirtManager`
+- Variant: `startvirtManager`
+- Variant: `startVirtmanager`
+- Variant: `startvirtmanager`
+- Variant: `start_virt_manager`
+
 ## Notes
 - Voice command variants all support `-s` device selection and tab completion.
 - Random log and Iflytek update command variants also support `-s` device selection and tab completion.
 - Jira command variants are command-name aliases only; they do not need device completion.
+- Rename USB Dir variants support case-insensitive Tab completion for command names and USB root directories.
+- Virt Manager also installs an application launcher into ~/.local/share/applications.
 - Legacy underscore-style shortcuts have been removed.
 
 ## Examples

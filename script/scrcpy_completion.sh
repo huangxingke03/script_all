@@ -2,6 +2,7 @@
 
 SCRCPY_D01_SERIAL="f6e277ff"
 SCRCPY_KP31_SERIAL="3d3fd206"
+SCRCPY_GEN4_GVM_SERIAL="63e9fbdd"
 
 _scrcpy_resolve_device_alias() {
     local value="${1,,}"
@@ -29,7 +30,7 @@ _scrcpy_known_device_aliases() {
 
 _scrcpy_is_default_bench_device() {
     case "$1" in
-        "${SCRCPY_D01_SERIAL}"|"${SCRCPY_KP31_SERIAL}")
+        "${SCRCPY_D01_SERIAL}"|"${SCRCPY_KP31_SERIAL}"|"${SCRCPY_GEN4_GVM_SERIAL}")
             return 0
             ;;
         *)
@@ -81,6 +82,7 @@ scrcpy() {
 
     if [ -n "${resolved_serial}" ] && _scrcpy_is_default_bench_device "${resolved_serial}" && ! _scrcpy_has_explicit_audio_option "${args[@]}"; then
         args+=("--audio-codec=aac")
+        args+=("--audio-encoder=c2.android.aac.encoder")
     fi
 
     command scrcpy "${args[@]}"
