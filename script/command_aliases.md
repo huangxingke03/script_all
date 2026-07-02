@@ -24,6 +24,13 @@
 - Variant: `voiceSettingkp31`
 - Variant: `voicesettingkp31`
 
+## Xunfei KP31
+- Standard: `xunfeikp31`
+- Variant: `Xunfeikp31`
+- Variant: `XunFeiKp31`
+- Variant: `xunfeiKp31`
+- Variant: `xunfeiKP31`
+
 ## Kill SystemUI
 - Standard: `killSystemui`
 - Variant: `killsystemUi`

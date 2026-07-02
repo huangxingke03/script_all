@@ -15,6 +15,11 @@ rm -f \
   "${TARGET_DIR}/voice_setting_d01" \
   "${TARGET_DIR}/voice_assistant_kp31" \
   "${TARGET_DIR}/voice_setting_kp31" \
+  "${TARGET_DIR}/xunfeikp31" \
+  "${TARGET_DIR}/Xunfeikp31" \
+  "${TARGET_DIR}/XunFeiKp31" \
+  "${TARGET_DIR}/xunfeiKp31" \
+  "${TARGET_DIR}/xunfeiKP31" \
   "${TARGET_DIR}/stwc" \
   "${TARGET_DIR}/stwc.sh" \
   "${TARGET_DIR}/Stwc" \
@@ -148,6 +153,15 @@ ln -sf "${TARGET_DIR}/voiceSettingKp31" "${TARGET_DIR}/voiceSettingkp31"
 ln -sf "${TARGET_DIR}/voiceSettingKp31" "${TARGET_DIR}/voicesettingkp31"
 ln -sf "${TARGET_DIR}/voiceSettingKp31" "${TARGET_DIR}/voice_setting_kp31"
 echo "更新---KP31语音设置打包推包脚本更新成功"
+
+cp "${SCRIPT_DIR}/xunfeikp31" "${TARGET_DIR}/xunfeikp31"
+echo "更新--- KP31讯飞设置页快捷脚本"
+chmod +x "${TARGET_DIR}/xunfeikp31"
+ln -sf "${TARGET_DIR}/xunfeikp31" "${TARGET_DIR}/Xunfeikp31"
+ln -sf "${TARGET_DIR}/xunfeikp31" "${TARGET_DIR}/XunFeiKp31"
+ln -sf "${TARGET_DIR}/xunfeikp31" "${TARGET_DIR}/xunfeiKp31"
+ln -sf "${TARGET_DIR}/xunfeikp31" "${TARGET_DIR}/xunfeiKP31"
+echo "更新---KP31讯飞设置页快捷脚本更新成功"
 
 cp "${SCRIPT_DIR}/kill_systemui.sh" "${TARGET_DIR}/killSystemui"
 echo "更新--- SystemUI 重启快捷脚本"

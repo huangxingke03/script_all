@@ -17,7 +17,7 @@ _voice_device_completion() {
         return 0
     fi
 
-    COMPREPLY=( $(compgen -W "-s -h" -- "$cur") )
+    COMPREPLY=( $(compgen -W "-s -c -C --clear-cache --CLEAR-CACHE -h --help --HELP" -- "$cur") )
 }
 
 _voice_completion_reset() {
@@ -27,12 +27,14 @@ _voice_completion_reset() {
         ./voice_assistant_kp31.sh
         ./voice_setting_d01.sh
         ./voice_setting_kp31.sh
+        ./xunfeikp31
         ./kill_systemui.sh
         voice_assistant_d01.sh
         kill_systemui.sh
         voice_assistant_kp31.sh
         voice_setting_d01.sh
         voice_setting_kp31.sh
+        xunfeikp31
         /usr/local/bin/voiceAssistantD01
         /usr/local/bin/voiceassistantD01
         /usr/local/bin/voiceAssistantd01
@@ -49,6 +51,11 @@ _voice_completion_reset() {
         /usr/local/bin/voicesettingKp31
         /usr/local/bin/voiceSettingkp31
         /usr/local/bin/voicesettingkp31
+        /usr/local/bin/xunfeikp31
+        /usr/local/bin/Xunfeikp31
+        /usr/local/bin/XunFeiKp31
+        /usr/local/bin/xunfeiKp31
+        /usr/local/bin/xunfeiKP31
         /usr/local/bin/stwc
         /usr/local/bin/stwc.sh
         /usr/local/bin/Stwc
@@ -100,6 +107,11 @@ _voice_completion_reset() {
         voicesettingKp31
         voiceSettingkp31
         voicesettingkp31
+        xunfeikp31
+        Xunfeikp31
+        XunFeiKp31
+        xunfeiKp31
+        xunfeiKP31
         stwc
         stwc.sh
         Stwc
@@ -149,10 +161,12 @@ _voice_completion_bind() {
         ./voice_assistant_kp31.sh
         ./voice_setting_d01.sh
         ./voice_setting_kp31.sh
+        ./xunfeikp31
         voice_assistant_d01.sh
         voice_assistant_kp31.sh
         voice_setting_d01.sh
         voice_setting_kp31.sh
+        xunfeikp31
         /usr/local/bin/voiceAssistantD01
         /usr/local/bin/voiceassistantD01
         /usr/local/bin/voiceAssistantd01
@@ -169,6 +183,11 @@ _voice_completion_bind() {
         /usr/local/bin/voicesettingKp31
         /usr/local/bin/voiceSettingkp31
         /usr/local/bin/voicesettingkp31
+        /usr/local/bin/xunfeikp31
+        /usr/local/bin/Xunfeikp31
+        /usr/local/bin/XunFeiKp31
+        /usr/local/bin/xunfeiKp31
+        /usr/local/bin/xunfeiKP31
         /usr/local/bin/stwc
         /usr/local/bin/stwc.sh
         /usr/local/bin/Stwc
@@ -220,6 +239,11 @@ _voice_completion_bind() {
         voicesettingKp31
         voiceSettingkp31
         voicesettingkp31
+        xunfeikp31
+        Xunfeikp31
+        XunFeiKp31
+        xunfeiKp31
+        xunfeiKP31
         stwc
         stwc.sh
         Stwc
