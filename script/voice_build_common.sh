@@ -34,6 +34,14 @@ collect_device_completion_replies() {
         prefix_suggestions+=("${DEFAULT_KP31_DEVICE_SERIAL}")
     fi
 
+    if [[ -n "${cur}" && "${DEFAULT_D01_DEVICE_SERIAL}" == "${cur}"* ]]; then
+        prefix_suggestions+=("${DEFAULT_D01_DEVICE_SERIAL}")
+    fi
+
+    if [[ -n "${cur}" && "${DEFAULT_KP31_DEVICE_SERIAL}" == "${cur}"* ]]; then
+        prefix_suggestions+=("${DEFAULT_KP31_DEVICE_SERIAL}")
+    fi
+
     while IFS= read -r line; do
         [ -z "${line}" ] && continue
         case "${line}" in

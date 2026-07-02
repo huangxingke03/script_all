@@ -3,7 +3,7 @@
 set -euo pipefail
 
 DEVICE_SERIAL=""
-TARGET_BRANCH="al_chery-kp31_dev"
+TARGET_BRANCH="al_chery-kp31_dev2"
 REPO_DIR="/home/huangxingke/work/code/workCode/JETOUR_D01_IFLYTEK"
 
 usage() {
