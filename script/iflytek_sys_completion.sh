@@ -22,6 +22,10 @@ _iflytek_sys_device_completion() {
 iflytek_sys_completion_repair() {
     local command_name
     local -a commands=(
+        ./reboots.sh
+        reboots.sh
+        /usr/local/bin/reboots
+        reboots
         ./update_d01_Int_sys.sh
         ./update_d01_sys.sh
         ./update_d01p_int_sys.sh

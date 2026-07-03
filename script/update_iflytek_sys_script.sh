@@ -12,6 +12,7 @@ COMPLETION_SOURCE_LINE="[ -f \"${COMPLETION_SCRIPT}\" ] && source \"${COMPLETION
 mkdir -p "${TARGET_DIR}"
 
 OLD_COMMANDS=(
+  "${TARGET_DIR}/reboots"
   "${TARGET_DIR}/update_d01_Int_sys"
   "${TARGET_DIR}/update_d01_Int_sys.sh"
   "${TARGET_DIR}/update_d01_sys"
@@ -80,6 +81,8 @@ echo "更新--- ${TARGET_DIR}/updateIflytekSysScript 成功"
 
 rm -f "${OLD_COMMANDS[@]}"
 echo "更新--- 已移除老快捷方式"
+
+install_command reboots.sh reboots
 
 install_command update_d01_Int_sys.sh updateD01IntSys
 ln -sf "${TARGET_DIR}/updateD01IntSys" "${TARGET_DIR}/updated01IntSys"
