@@ -60,6 +60,7 @@ run_adb_remount() {
 
 ensure_target_branch() {
     local current_branch
+    local remote_name="origin"
 
     cd "${REPO_DIR}" || {
         echo "错误: 无法进入仓库目录 ${REPO_DIR}"
@@ -73,18 +74,35 @@ ensure_target_branch() {
     fi
 
     echo "切换到 ：JETOUR_D01_IFLYTEK根目录"
-    if [ "${current_branch}" = "${TARGET_BRANCH}" ]; then
-        echo "当前已在目标分支 ${TARGET_BRANCH}，无需切换"
-        return 0
-    fi
-
-    echo "当前分支为 ${current_branch}，开始切换到 ${TARGET_BRANCH}"
-    git checkout "${TARGET_BRANCH}" || {
-        echo "错误: 切换到分支 ${TARGET_BRANCH} 失败，已停止后续推包"
+    echo "拉取远端 ${remote_name}/${TARGET_BRANCH} 最新代码..."
+    git fetch "${remote_name}" "${TARGET_BRANCH}" || {
+        echo "错误: 拉取远端分支 ${remote_name}/${TARGET_BRANCH} 失败"
         exit 1
     }
 
-    echo "已切换到目标分支 ${TARGET_BRANCH}"
+    if [ "${current_branch}" != "${TARGET_BRANCH}" ]; then
+        echo "当前分支为 ${current_branch}，开始切换到 ${TARGET_BRANCH}"
+        git checkout "${TARGET_BRANCH}" >/dev/null 2>&1 || \
+        git checkout -B "${TARGET_BRANCH}" "${remote_name}/${TARGET_BRANCH}" || {
+            echo "错误: 切换到分支 ${TARGET_BRANCH} 失败，已停止后续推包"
+            exit 1
+        }
+        echo "已切换到目标分支 ${TARGET_BRANCH}"
+    else
+        echo "当前已在目标分支 ${TARGET_BRANCH}"
+    fi
+
+    echo "强制同步本地分支到 ${remote_name}/${TARGET_BRANCH}..."
+    git reset --hard "${remote_name}/${TARGET_BRANCH}" || {
+        echo "错误: 重置本地分支到 ${remote_name}/${TARGET_BRANCH} 失败"
+        exit 1
+    }
+    git clean -fd || {
+        echo "错误: 清理本地未跟踪文件失败"
+        exit 1
+    }
+
+    echo "本地代码已与 ${remote_name}/${TARGET_BRANCH} 保持一致"
 }
 
 while getopts ":s:h" opt; do

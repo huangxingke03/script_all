@@ -83,7 +83,7 @@ push_path() {
 
 ensure_target_branch_latest() {
     local current_branch
-    local untracked_count
+    local remote_name="origin"
 
     cd "${REPO_DIR}" || {
         echo "错误: 无法进入仓库目录 ${REPO_DIR}"
@@ -97,35 +97,35 @@ ensure_target_branch_latest() {
     fi
 
     echo "切换到 ：JETOUR_D01_IFLYTEK根目录"
-    echo "开始获取 ${TARGET_BRANCH} 远端最新代码..."
-
-    git fetch origin "${TARGET_BRANCH}" || {
-        echo "错误: 获取远端分支 ${TARGET_BRANCH} 失败"
+    echo "拉取远端 ${remote_name}/${TARGET_BRANCH} 最新代码..."
+    git fetch "${remote_name}" "${TARGET_BRANCH}" || {
+        echo "错误: 拉取远端分支 ${remote_name}/${TARGET_BRANCH} 失败"
         exit 1
     }
 
     if [ "${current_branch}" != "${TARGET_BRANCH}" ]; then
-        echo "当前分支为 ${current_branch}，强制切换到 ${TARGET_BRANCH}"
-        git checkout -f "${TARGET_BRANCH}" || {
-            echo "错误: 切换到分支 ${TARGET_BRANCH} 失败，请检查是否有未跟踪文件冲突"
+        echo "当前分支为 ${current_branch}，开始切换到 ${TARGET_BRANCH}"
+        git checkout "${TARGET_BRANCH}" >/dev/null 2>&1 || \
+        git checkout -B "${TARGET_BRANCH}" "${remote_name}/${TARGET_BRANCH}" || {
+            echo "错误: 切换到分支 ${TARGET_BRANCH} 失败，已停止后续推包"
             exit 1
         }
+        echo "已切换到目标分支 ${TARGET_BRANCH}"
     else
         echo "当前已在目标分支 ${TARGET_BRANCH}"
     fi
 
-    echo "本地已跟踪修改将被远端覆盖..."
-    git reset --hard "origin/${TARGET_BRANCH}" || {
-        echo "错误: 重置到 origin/${TARGET_BRANCH} 失败"
+    echo "强制同步本地分支到 ${remote_name}/${TARGET_BRANCH}..."
+    git reset --hard "${remote_name}/${TARGET_BRANCH}" || {
+        echo "错误: 重置本地分支到 ${remote_name}/${TARGET_BRANCH} 失败"
+        exit 1
+    }
+    git clean -fd || {
+        echo "错误: 清理本地未跟踪文件失败"
         exit 1
     }
 
-    untracked_count=$(git ls-files --others --exclude-standard | wc -l)
-    if [ "${untracked_count}" -gt 0 ]; then
-        echo "提示: 仓库仍有 ${untracked_count} 个未跟踪文件，未做删除。"
-    fi
-
-    echo "已同步到 origin/${TARGET_BRANCH} 最新代码"
+    echo "本地代码已与 ${remote_name}/${TARGET_BRANCH} 保持一致"
 }
 
 while getopts ":s:h" opt; do
