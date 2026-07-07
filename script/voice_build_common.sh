@@ -13,6 +13,12 @@ resolve_device_completion_hint() {
         kp31)
             printf '%s\n' "${DEFAULT_KP31_DEVICE_SERIAL}"
             ;;
+        gen4)
+            printf '%s\n' "63e9fbdd"
+            ;;
+        gen4_arm64|gen4arm64)
+            printf '%s\n' "3165e176"
+            ;;
         *)
             return 1
             ;;
@@ -22,26 +28,11 @@ resolve_device_completion_hint() {
 collect_device_completion_replies() {
     local cur="$1"
     local cur_lower="${cur,,}"
-    local line serial state model device_name transport_id
-    local alias_serial=""
+    local line serial state model device_name transport_id connected_serials
+    local alias_serial
     local -a prefix_suggestions=() fuzzy_suggestions=()
 
-    if alias_serial=$(resolve_device_completion_hint "${cur}" 2>/dev/null); then
-        prefix_suggestions+=("${alias_serial}")
-    elif [ "${cur_lower}" = "d" ] || [ "${cur_lower}" = "d0" ]; then
-        prefix_suggestions+=("${DEFAULT_D01_DEVICE_SERIAL}")
-    elif [ "${cur_lower}" = "k" ] || [ "${cur_lower}" = "kp" ] || [ "${cur_lower}" = "kp3" ]; then
-        prefix_suggestions+=("${DEFAULT_KP31_DEVICE_SERIAL}")
-    fi
-
-    if [[ -n "${cur}" && "${DEFAULT_D01_DEVICE_SERIAL}" == "${cur}"* ]]; then
-        prefix_suggestions+=("${DEFAULT_D01_DEVICE_SERIAL}")
-    fi
-
-    if [[ -n "${cur}" && "${DEFAULT_KP31_DEVICE_SERIAL}" == "${cur}"* ]]; then
-        prefix_suggestions+=("${DEFAULT_KP31_DEVICE_SERIAL}")
-    fi
-
+    # First pass: collect connected device serials from adb.
     while IFS= read -r line; do
         [ -z "${line}" ] && continue
         case "${line}" in
@@ -53,6 +44,7 @@ collect_device_completion_replies() {
         serial=$(awk '{print $1}' <<< "${line}")
         state=$(awk '{print $2}' <<< "${line}")
         [ "${state}" != "device" ] && continue
+        connected_serials+=" ${serial} "
 
         model=$(sed -n 's/.*model:\([^[:space:]]*\).*/\1/p' <<< "${line}")
         device_name=$(sed -n 's/.*device:\([^[:space:]]*\).*/\1/p' <<< "${line}")
@@ -64,6 +56,21 @@ collect_device_completion_replies() {
             fuzzy_suggestions+=("${serial}")
         fi
     done < <(adb devices -l 2>/dev/null)
+
+    # Second pass: add default/alias serials only when the device is actually connected.
+    if alias_serial=$(resolve_device_completion_hint "${cur}" 2>/dev/null); then
+        if [[ "${connected_serials}" == *" ${alias_serial} "* ]]; then
+            prefix_suggestions+=("${alias_serial}")
+        fi
+    elif [ "${cur_lower}" = "d" ] || [ "${cur_lower}" = "d0" ]; then
+        if [[ "${connected_serials}" == *" ${DEFAULT_D01_DEVICE_SERIAL} "* ]]; then
+            prefix_suggestions+=("${DEFAULT_D01_DEVICE_SERIAL}")
+        fi
+    elif [ "${cur_lower}" = "k" ] || [ "${cur_lower}" = "kp" ] || [ "${cur_lower}" = "kp3" ]; then
+        if [[ "${connected_serials}" == *" ${DEFAULT_KP31_DEVICE_SERIAL} "* ]]; then
+            prefix_suggestions+=("${DEFAULT_KP31_DEVICE_SERIAL}")
+        fi
+    fi
 
     if [ ${#prefix_suggestions[@]} -gt 0 ]; then
         printf '%s\n' "${prefix_suggestions[@]}" | awk '!seen[$0]++'

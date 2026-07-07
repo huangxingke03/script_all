@@ -86,6 +86,24 @@ should_skip_attachment() {
     esac
 }
 
+
+should_skip_extract_path() {
+    local normalized_path lower_path
+
+    normalized_path="$(normalize_attachment_name "$1")"
+    normalized_path="${normalized_path#./}"
+    lower_path="${normalized_path,,}"
+
+    case "$lower_path" in
+        qnx_log/*|*/qnx_log/*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 format_size() {
     local bytes="$1"
 
@@ -463,6 +481,7 @@ extract_one_archive() {
 extract_archives_recursively() {
     local archive lower_name processed_in_pass
     local -a archives=()
+    local -A skipped_extract_paths_seen=()
 
     while :; do
         processed_in_pass=0
@@ -486,6 +505,13 @@ extract_archives_recursively() {
                 continue
             fi
             if [[ "$lower_name" =~ \.[0-9]{3}$ ]] && [[ "$lower_name" != *.001 ]]; then
+                continue
+            fi
+
+            if should_skip_extract_path "$archive"; then
+                [[ -n "${skipped_extract_paths_seen[$archive]}" ]] && continue
+                echo "⏭️ 跳过目录内压缩包解压: $archive"
+                skipped_extract_paths_seen["$archive"]=1
                 continue
             fi
 
