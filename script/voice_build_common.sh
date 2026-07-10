@@ -25,6 +25,48 @@ resolve_device_completion_hint() {
     esac
 }
 
+resolve_connected_device_serial() {
+    local query="$1"
+    local line serial state
+    local -a exact_matches=() prefix_matches=()
+
+    while IFS= read -r line; do
+        [ -z "${line}" ] && continue
+        case "${line}" in
+            List\ of\ devices* )
+                continue
+                ;;
+        esac
+
+        serial=$(awk '{print $1}' <<< "${line}")
+        state=$(awk '{print $2}' <<< "${line}")
+        [ "${state}" != "device" ] && continue
+
+        if [ "${serial}" = "${query}" ]; then
+            exact_matches+=("${serial}")
+        elif [[ "${serial}" == "${query}"* ]]; then
+            prefix_matches+=("${serial}")
+        fi
+    done < <(adb devices -l 2>/dev/null)
+
+    if [ ${#exact_matches[@]} -eq 1 ]; then
+        printf '%s\n' "${exact_matches[0]}"
+        return 0
+    fi
+
+    if [ ${#prefix_matches[@]} -eq 1 ]; then
+        printf '%s\n' "${prefix_matches[0]}"
+        return 0
+    fi
+
+    if [ ${#prefix_matches[@]} -gt 1 ]; then
+        echo "错误: 设备序列号前缀 ${query} 匹配到多个设备: ${prefix_matches[*]}" >&2
+        return 1
+    fi
+
+    return 1
+}
+
 collect_device_completion_replies() {
     local cur="$1"
     local cur_lower="${cur,,}"
@@ -81,6 +123,7 @@ collect_device_completion_replies() {
 
 parse_device_args() {
     local opt
+    local resolved_serial
 
     while getopts ":s:h" opt; do
         case "$opt" in
@@ -103,6 +146,10 @@ parse_device_args() {
                 ;;
         esac
     done
+
+    if [ -n "${DEVICE_SERIAL}" ] && resolved_serial=$(resolve_connected_device_serial "${DEVICE_SERIAL}" 2>/dev/null); then
+        DEVICE_SERIAL="${resolved_serial}"
+    fi
 }
 
 print_device_usage() {

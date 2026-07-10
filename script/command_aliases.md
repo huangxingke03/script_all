@@ -105,6 +105,13 @@
 - Variant: `pulllogcatbyAdb`
 - Variant: `pull_logcat_by_adb`
 
+## Sound Bt Click
+- Standard: `soundBtClick`
+- Variant: `soundbtClick`
+- Variant: `soundBtclick`
+- Variant: `soundbtclick`
+- Relation: linked to `stwc`; actual service logic lives in `stwc.sh`
+
 ## Clear Logcat By Adb
 - Standard: `clearLogcatByAdb`
 - Variant: `clearlogcatByAdb`
@@ -125,6 +132,8 @@
 - Voice command variants all support `-s` device selection and tab completion.
 - Random log and Iflytek update command variants also support `-s` device selection and tab completion.
 - `pullLogcatByAdb` variants also support `-s` device selection and tab completion.
+- `soundBtClick` supports `-s` device selection and tab completion.
+- `stwc` is the primary implementation for the VoiceCommonService sound-button action; `soundBtClick` is the easier-to-remember entry name and links to `stwc`.
 - Jira command variants are command-name aliases only; they do not need device completion.
 - Rename USB Dir variants support case-insensitive Tab completion for command names and USB root directories.
 - Virt Manager also installs an application launcher into ~/.local/share/applications.
@@ -140,6 +149,8 @@ startRandomlog -s <device_serial>
 updatekp31sys -s <device_serial>
 pullLogcatByAdb -s <device_serial>
 clearLogcatByAdb -s <device_serial>
+stwc -s <device_serial>
+soundBtClick -s <device_serial>
 clearLogcatByAdb /data/log
 updateDownloadjira
 updatedownloadjira
