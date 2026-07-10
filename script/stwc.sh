@@ -32,3 +32,4 @@ echo "当前台架设备: $DEVICE_SERIAL ($DEVICE_NAME)"
 adb -s "$DEVICE_SERIAL" shell am startservice \
     -n "$SERVICE_NAME" \
     --es "seman" "$SEMAN_VALUE"
+echo "已触发音按键服务"

@@ -32,6 +32,11 @@ _reload_clear_logcat_by_adb_completion() {
     source "${SCRIPT_DIR}/clear_logcat_by_adb_completion.sh"
 }
 
+_reload_sound_bt_click_completion() {
+    # shellcheck disable=SC1091
+    source "${SCRIPT_DIR}/sound_bt_click_completion.sh"
+}
+
 reload_local_completions() {
     _reload_random_log_completion
     _reload_iflytek_completion
@@ -39,6 +44,7 @@ reload_local_completions() {
     _reload_scrcpy_completion
     _reload_pull_logcat_by_adb_completion
     _reload_clear_logcat_by_adb_completion
+    _reload_sound_bt_click_completion
 }
 
 update_random_log_script() {
@@ -65,4 +71,9 @@ updatePullLogcatByAdb() {
 updateClearLogcatByAdb() {
     command bash "${SCRIPT_DIR}/update_clear_logcat_by_adb.sh" "$@" || return $?
     _reload_clear_logcat_by_adb_completion
+}
+
+updateSoundBtClick() {
+    command bash "${SCRIPT_DIR}/update_sound_bt_click.sh" "$@" || return $?
+    _reload_sound_bt_click_completion
 }

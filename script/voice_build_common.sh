@@ -116,8 +116,10 @@ collect_device_completion_replies() {
 
     if [ ${#prefix_suggestions[@]} -gt 0 ]; then
         printf '%s\n' "${prefix_suggestions[@]}" | awk '!seen[$0]++'
-    else
+    elif [ ${#fuzzy_suggestions[@]} -gt 0 ]; then
         printf '%s\n' "${fuzzy_suggestions[@]}" | awk '!seen[$0]++'
+    else
+        printf '%s\n' ${connected_serials} | awk 'NF && !seen[$0]++'
     fi
 }
 

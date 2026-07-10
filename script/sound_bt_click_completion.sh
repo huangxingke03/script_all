@@ -5,14 +5,21 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source "${SCRIPT_DIR}/voice_build_common.sh"
 
 _sound_bt_click_completion() {
-    local cur prev
+    local cur prev device_query reply
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
+    device_query="${cur}"
 
-    compopt +o default +o bashdefault 2>/dev/null
+    compopt +o default +o bashdefault +o dirnames +o filenames 2>/dev/null
 
     if [ "${prev}" = "-s" ]; then
-        COMPREPLY=( $(collect_device_completion_replies "${cur}") )
+        [[ "${device_query}" == */* ]] && device_query=""
+        COMPREPLY=()
+
+        while IFS= read -r reply; do
+            [ -n "${reply}" ] && COMPREPLY+=("${reply}")
+        done < <(collect_device_completion_replies "${device_query}")
+
         return 0
     fi
 
