@@ -39,8 +39,8 @@ rm -f \
   "${TARGET_DIR}/updatePullLogcatbyAdb" \
   "${TARGET_DIR}/updatepullLogcatbyAdb" \
   "${TARGET_DIR}/pullLogcatByAdb" \
-  "${TARGET_DIR}/pulllogcatByAdb" \
   "${TARGET_DIR}/pullLogcatbyAdb" \
+  "${TARGET_DIR}/pulllogcatByAdb" \
   "${TARGET_DIR}/pulllogcatbyAdb"
 
 cp "${SCRIPT_DIR}/update_pull_logcat_by_adb.sh" "${TARGET_DIR}/updatePullLogcatByAdb"
@@ -53,8 +53,8 @@ echo "更新--- ${TARGET_DIR}/updatePullLogcatByAdb 成功----"
 
 cp "${SCRIPT_DIR}/pull_logcat_by_adb.sh" "${TARGET_DIR}/pullLogcatByAdb"
 chmod +x "${TARGET_DIR}/pullLogcatByAdb"
-ln -sf "${TARGET_DIR}/pullLogcatByAdb" "${TARGET_DIR}/pulllogcatByAdb"
 ln -sf "${TARGET_DIR}/pullLogcatByAdb" "${TARGET_DIR}/pullLogcatbyAdb"
+ln -sf "${TARGET_DIR}/pullLogcatByAdb" "${TARGET_DIR}/pulllogcatByAdb"
 ln -sf "${TARGET_DIR}/pullLogcatByAdb" "${TARGET_DIR}/pulllogcatbyAdb"
 ln -sf "${TARGET_DIR}/pullLogcatByAdb" "${TARGET_DIR}/pull_logcat_by_adb"
 echo "更新--- ${TARGET_DIR}/pullLogcatByAdb 成功----"

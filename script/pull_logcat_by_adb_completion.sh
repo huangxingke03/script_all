@@ -25,12 +25,12 @@ pull_logcat_by_adb_completion_repair() {
         ./pull_logcat_by_adb.sh
         pull_logcat_by_adb.sh
         /usr/local/bin/pullLogcatByAdb
-        /usr/local/bin/pulllogcatByAdb
         /usr/local/bin/pullLogcatbyAdb
+        /usr/local/bin/pulllogcatByAdb
         /usr/local/bin/pulllogcatbyAdb
         pullLogcatByAdb
-        pulllogcatByAdb
         pullLogcatbyAdb
+        pulllogcatByAdb
         pulllogcatbyAdb
     )
 

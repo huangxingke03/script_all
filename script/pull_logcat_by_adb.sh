@@ -50,11 +50,10 @@ if [ -z "${TARGET_SERIAL}" ]; then
 fi
 [ -n "${TARGET_SERIAL}" ] || TARGET_SERIAL="unknown_device"
 TARGET_SERIAL="${TARGET_SERIAL//[^a-zA-Z0-9._-]/_}"
-
 TARGET_PREFIX="${TARGET_SERIAL}"
-if [ "${TARGET_SERIAL}" = "3165e176" ]; then
+if [ "${TARGET_SERIAL}" = "${DEFAULT_D01_DEVICE_SERIAL}" ] || [ "${TARGET_SERIAL}" = "3165e176" ]; then
     TARGET_PREFIX="D01_${TARGET_SERIAL}"
-elif [ "${TARGET_SERIAL}" = "c40b48ac" ]; then
+elif [ "${TARGET_SERIAL}" = "${DEFAULT_KP31_DEVICE_SERIAL}" ] || [ "${TARGET_SERIAL}" = "c40b48ac" ]; then
     TARGET_PREFIX="KP31_${TARGET_SERIAL}"
 fi
 
