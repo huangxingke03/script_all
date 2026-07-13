@@ -12,6 +12,12 @@
 - Variant: `voiceAssistantkp31`
 - Variant: `voiceassistantkp31`
 
+## Voice Assistant T12A
+- Standard: `voiceAssistantT12a`
+- Variant: `voiceassistantT12a`
+- Variant: `voiceAssistantt12a`
+- Variant: `voiceassistantt12a`
+
 ## Voice Setting D01
 - Standard: `voiceSettingD01`
 - Variant: `voicesettingD01`
@@ -24,12 +30,37 @@
 - Variant: `voiceSettingkp31`
 - Variant: `voicesettingkp31`
 
+## Voice Assistant API KP31
+- Standard: `makeVoiceAssistantApiKp31`
+- Variant: `makevoiceAssistantApiKp31`
+- Variant: `makeVoiceAssistantApikp31`
+- Variant: `makevoiceAssistantApikp31`
+- Variant: `makevoiceassistantapikp31`
+- Variant: `make_voice_assistant_api_kp31`
+- Variant: `make_voice_assistant_api_kp31.sh`
+
+## Voice Assistant API D01
+- Standard: `makeVoiceAssistantApiD01`
+- Variant: `makevoiceAssistantApiD01`
+- Variant: `makeVoiceAssistantApid01`
+- Variant: `makevoiceAssistantApid01`
+- Variant: `makevoiceassistantapid01`
+- Variant: `make_voice_assistant_api_d01`
+- Variant: `make_voice_assistant_api_d01.sh`
+
 ## Xunfei KP31
-- Standard: `xunfeikp31`
-- Variant: `Xunfeikp31`
-- Variant: `XunFeiKp31`
-- Variant: `xunfeiKp31`
-- Variant: `xunfeiKP31`
+- Standard: `startIflytekPage`
+- Variant: `startiflytekPage`
+- Variant: `startIflytekpage`
+- Variant: `startiflytekpage`
+- Variant: `start_iflytek_page`
+
+## Start QNX D01
+- Standard: `startQnxD01`
+- Variant: `startqnxD01`
+- Variant: `startQnxd01`
+- Variant: `startqnxd01`
+- Variant: `start_qnx_d01`
 
 ## Kill SystemUI
 - Standard: `killSystemui`
@@ -51,6 +82,11 @@
 - Shortcut Variant: `ksuI`
 - Shortcut Variant: `kSuI`
 
+## Reboot Device
+- Standard: `rebootDevice`
+- Variant: `rebootdevice`
+- Variant: `reboot_device`
+
 ## Random Log
 - Standard: `startRandomLog`
 - Variant: `startrandomLog`
@@ -62,12 +98,40 @@
 - Variant: `stoprandomlog`
 
 ## Jira Commands
-- Standard: `updateDownloadJira`
+- Standard: `downloadJira`
+- Variant: `downloadjira`
+- Variant: `download_jira`
+- Standard: `downloadJiraFiltered`
+- Variant: `downloadjiraFiltered`
+- Variant: `downloadJirafiltered`
+- Variant: `downloadjirafiltered`
+- Variant: `download_jira_filtered`
+
+## Feishu Download Commands
+- Standard: `downloadFeishu`
+- Variant: `downloadfeishu`
+- Variant: `download_feishu`
+- Variant: `download_bug_feishu`
+- Shortcut: `downloadb`
+
+## Unified Update
+- Standard: `updateSciptAll`
+- Variant: `updatesciptAll`
+- Variant: `updateSciptall`
+- Variant: `updatesciptall`
+- Variant: `update_scipt_all`
+- Variant: `updateAll`
+- Variant: `update_all`
+- Variant: `updateDownloadJira`
 - Variant: `updatedownloadJira`
 - Variant: `updateDownloadjira`
 - Variant: `updatedownloadjira`
-- Standard: `downloadJira`
-- Variant: `downloadjira`
+- Variant: `update_download_jira`
+- Variant: `updateDownloadFeishu`
+- Variant: `updatedownloadFeishu`
+- Variant: `updateDownloadfeishu`
+- Variant: `updatedownloadfeishu`
+- Variant: `update_download_feishu`
 
 ## Iflytek System Update Commands
 - Standard: `updateD01IntSys`
@@ -105,19 +169,18 @@
 - Variant: `pulllogcatbyAdb`
 - Variant: `pull_logcat_by_adb`
 
-## Sound Bt Click
-- Standard: `soundBtClick`
-- Variant: `soundbtClick`
-- Variant: `soundBtclick`
-- Variant: `soundbtclick`
-- Relation: linked to `stwc`; actual service logic lives in `stwc.sh`
-
 ## Clear Logcat By Adb
 - Standard: `clearLogcatByAdb`
 - Variant: `clearlogcatByAdb`
 - Variant: `clearLogcatbyAdb`
 - Variant: `clearlogcatbyAdb`
 - Variant: `clear_logcat_by_adb`
+
+## Sound Bt Click
+- Standard: `soundBtClick`
+- Variant: `soundbtClick`
+- Variant: `soundBtclick`
+- Variant: `soundbtclick`
 
 ## Virt Manager
 - Standard: `virtManager`
@@ -129,29 +192,45 @@
 - Variant: `start_virt_manager`
 
 ## Notes
-- Voice command variants all support `-s` device selection and tab completion.
-- Random log and Iflytek update command variants also support `-s` device selection and tab completion.
-- `pullLogcatByAdb` variants also support `-s` device selection and tab completion.
+- JIRA implementation files live in `download_jira/`; published commands are installed into `~/.local/bin` by `update_scipt_all.sh`.
+- Feishu implementation files live in `download_feishu/`; published commands are installed into `~/.local/bin` by `update_scipt_all.sh`.
+- Log-related implementation and completion files live in `logcat_sum/`; `update_scipt_all.sh` now publishes `startRandomLog`, `stopRandomLog`, `pullLogcatByAdb`, and `clearLogcatByAdb` from there.
+- Common utility scripts live in `common_script/`; `update_scipt_all.sh` now publishes `startIflytekPage`, `startQnxD01`, `rebootDevice`, `killSystemui`, `renameUsbDir`, and `virtManager` from there, and loads their shared completion logic from the same directory.
+- `updateSciptAll` is the only local update implementation in this repo; old `updateAll` and JIRA/Feishu legacy update names are compatibility aliases to the same unified updater.
+- `update_scipt_all.sh` publishes these downloader entry points: `downloadJira`, `downloadJiraFiltered`, `downloadFeishu`, plus their cookie/cURL helper files.
+- Jira and Feishu downloader aliases are command-name aliases only; they do not need device completion.
+- Random log, `pullLogcatByAdb`, and `clearLogcatByAdb` variants support `-s` device selection and tab completion.
+- Voice command variants and Iflytek update command variants also support `-s` device selection and tab completion. Voice build implementations, shared helpers, completion logic, and VoiceAssistant API jar helper scripts now live in `voice_build/`. `update_scipt_all.sh` now publishes `voiceAssistant*`, `voiceSetting*`, `makeVoiceAssistantApiKp31`, and `makeVoiceAssistantApiD01` from there; Iflytek implementation scripts still live in `update_iflytek/`.
 - `soundBtClick` supports `-s` device selection and tab completion.
-- `stwc` is the primary implementation for the VoiceCommonService sound-button action; `soundBtClick` is the easier-to-remember entry name and links to `stwc`.
-- Jira command variants are command-name aliases only; they do not need device completion.
-- Rename USB Dir variants support case-insensitive Tab completion for command names and USB root directories.
-- Virt Manager also installs an application launcher into ~/.local/share/applications.
-- Legacy underscore-style shortcuts have been removed.
+- `soundBtClick` is the canonical implementation for the VoiceCommonService sound-button action.
+- Rename USB Dir variants now live in `common_script/`, are published by `update_scipt_all.sh`, and support case-insensitive Tab completion for command names plus current first-level directories under the configured USB mount point.
+- Virt Manager now lives in `common_script/`, is published by `update_scipt_all.sh`, and also installs an application launcher into `~/.local/share/applications`.
+- Legacy underscore-style shortcuts have been removed except where they are still intentionally published as compatibility aliases.
+- `shell_refresh_hooks.sh` is loaded from `~/.bashrc` when a new Bash shell starts; it does not publish scripts, but it does define helper update functions and immediately reload current completion definitions into the shell session.
+- `update_scipt_all.sh` is the actual publisher for local commands in `~/.local/bin`; it now only ensures the single `shell_refresh_hooks.sh` entry exists in `~/.bashrc`, and no longer writes per-completion source lines there.
+- If command names or symlink targets were just updated, run `hash -r`; if completion behavior was updated, run `source ~/.bashrc` or `reload_local_completions`.
+- `makeVoiceAssistantApiKp31` and `makeVoiceAssistantApiD01` accept either a full version like `1.8.7` or a 3-digit shorthand like `187` -> `1.8.7`, `211` -> `2.1.1`.
+- `makeVoiceAssistantApiKp31` and `makeVoiceAssistantApiD01` are local jar build helpers, so they do not support `-s`; connected-device Tab completion still applies to the voice deploy commands such as `voiceAssistant*` and `voiceSetting*`.
 
 ## Examples
 ```bash
 voiceAssistantKp31 -s <device_serial>
+voiceAssistantT12a -s <device_serial>
+makeVoiceAssistantApiKp31 187
+makeVoiceAssistantApiD01 211
 voiceassistantkp31 -s <device_serial>
 ksui -s <device_serial>
 killsystemui -s <device_serial>
 startRandomlog -s <device_serial>
-updatekp31sys -s <device_serial>
 pullLogcatByAdb -s <device_serial>
 clearLogcatByAdb -s <device_serial>
-stwc -s <device_serial>
 soundBtClick -s <device_serial>
+startQnxD01
 clearLogcatByAdb /data/log
-updateDownloadjira
-updatedownloadjira
+updateSciptAll
+updateAll
+downloadJira CHYKP31-1028
+downloadJiraFiltered CHYKP31-1028
+downloadFeishu 7043211990
+downloadb 7043211990
 ```

@@ -1,8 +1,9 @@
 #!/bin/bash
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/voice_build_common.sh"
+source "${REPO_ROOT}/voice_build/voice_build_common.sh"
 
 _sound_bt_click_completion() {
     local cur prev device_query reply
@@ -15,11 +16,9 @@ _sound_bt_click_completion() {
     if [ "${prev}" = "-s" ]; then
         [[ "${device_query}" == */* ]] && device_query=""
         COMPREPLY=()
-
         while IFS= read -r reply; do
             [ -n "${reply}" ] && COMPREPLY+=("${reply}")
         done < <(collect_device_completion_replies "${device_query}")
-
         return 0
     fi
 
@@ -29,6 +28,7 @@ _sound_bt_click_completion() {
 sound_bt_click_completion_repair() {
     local command_name
     local -a commands=(
+        ./common_script/sound_bt_click.sh
         /home/huangxingke/.local/bin/soundBtClick
         /home/huangxingke/.local/bin/soundbtClick
         /home/huangxingke/.local/bin/soundBtclick
@@ -48,11 +48,9 @@ sound_bt_click_completion_repair() {
     for command_name in "${commands[@]}"; do
         complete -r "${command_name}" 2>/dev/null || true
     done
-
     for command_name in "${stale_commands[@]}"; do
         complete -r "${command_name}" 2>/dev/null || true
     done
-
     for command_name in "${commands[@]}"; do
         complete -o nospace -F _sound_bt_click_completion "${command_name}"
     done

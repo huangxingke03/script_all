@@ -1,8 +1,13 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck disable=SC1091
+source "${REPO_ROOT}/voice_build/voice_build_common.sh"
+
 DEVICE_SERIAL=""
 
-usage() {
+print_usage() {
     echo "用法: $0 [-s device_serial]"
     echo "  -s device_serial  指定 adb 设备序列号"
 }
@@ -53,17 +58,17 @@ while getopts ":s:h" opt; do
             DEVICE_SERIAL="${OPTARG}"
             ;;
         h)
-            usage
+            print_print_usage
             exit 0
             ;;
         :)
             echo "错误: -${OPTARG} 需要传入设备序列号"
-            usage
+            print_print_usage
             exit 1
             ;;
         \?)
             echo "错误: 不支持的参数 -${OPTARG}"
-            usage
+            print_print_usage
             exit 1
             ;;
     esac

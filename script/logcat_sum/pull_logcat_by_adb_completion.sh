@@ -1,8 +1,9 @@
 #!/bin/bash
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/voice_build_common.sh"
+source "${REPO_ROOT}/voice_build/voice_build_common.sh"
 
 _pull_logcat_by_adb_completion() {
     local cur prev
@@ -23,11 +24,10 @@ pull_logcat_by_adb_completion_repair() {
     local command_name
     local -a commands=(
         ./pull_logcat_by_adb.sh
-        pull_logcat_by_adb.sh
-        /usr/local/bin/pullLogcatByAdb
-        /usr/local/bin/pullLogcatbyAdb
-        /usr/local/bin/pulllogcatByAdb
-        /usr/local/bin/pulllogcatbyAdb
+        ~/.local/bin/pullLogcatByAdb
+        ~/.local/bin/pullLogcatbyAdb
+        ~/.local/bin/pulllogcatByAdb
+        ~/.local/bin/pulllogcatbyAdb
         pullLogcatByAdb
         pullLogcatbyAdb
         pulllogcatByAdb
@@ -35,7 +35,12 @@ pull_logcat_by_adb_completion_repair() {
     )
 
     local -a stale_commands=(
+        pull_logcat_by_adb.sh
         pull_logcat_by_adb
+        /usr/local/bin/pullLogcatByAdb
+        /usr/local/bin/pullLogcatbyAdb
+        /usr/local/bin/pulllogcatByAdb
+        /usr/local/bin/pulllogcatbyAdb
         /usr/local/bin/pull_logcat_by_adb
     )
 

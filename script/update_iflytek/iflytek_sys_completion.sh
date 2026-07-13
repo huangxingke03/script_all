@@ -2,7 +2,7 @@
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/voice_build_common.sh"
+source "${SCRIPT_DIR}/../voice_build/voice_build_common.sh"
 
 _iflytek_sys_device_completion() {
     local cur prev
@@ -22,15 +22,17 @@ _iflytek_sys_device_completion() {
 iflytek_sys_completion_repair() {
     local command_name
     local -a commands=(
-        ./reboots.sh
-        reboots.sh
-        /usr/local/bin/reboots
-        reboots
-        ./update_d01_Int_sys.sh
-        ./update_d01_sys.sh
-        ./update_d01p_int_sys.sh
-        ./update_kp31_int_sys.sh
-        ./update_kp31_sys.sh
+        ./common_script/reboot_device.sh
+        reboot_device.sh
+        /usr/local/bin/rebootDevice
+        rebootDevice
+        rebootdevice
+        reboot_device
+        ./update_iflytek/update_d01_Int_sys.sh
+        ./update_iflytek/update_d01_sys.sh
+        ./update_iflytek/update_d01p_int_sys.sh
+        ./update_iflytek/update_kp31_int_sys.sh
+        ./update_iflytek/update_kp31_sys.sh
         update_d01_Int_sys.sh
         update_d01_sys.sh
         update_d01p_int_sys.sh

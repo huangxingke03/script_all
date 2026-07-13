@@ -1,8 +1,9 @@
 #!/bin/bash
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/voice_build_common.sh"
+source "${REPO_ROOT}/voice_build/voice_build_common.sh"
 
 _clear_logcat_by_adb_completion() {
     local cur prev
@@ -23,11 +24,10 @@ clear_logcat_by_adb_completion_repair() {
     local command_name
     local -a commands=(
         ./clear_logcat_by_adb.sh
-        clear_logcat_by_adb.sh
-        /usr/local/bin/clearLogcatByAdb
-        /usr/local/bin/clearlogcatByAdb
-        /usr/local/bin/clearLogcatbyAdb
-        /usr/local/bin/clearlogcatbyAdb
+        ~/.local/bin/clearLogcatByAdb
+        ~/.local/bin/clearlogcatByAdb
+        ~/.local/bin/clearLogcatbyAdb
+        ~/.local/bin/clearlogcatbyAdb
         clearLogcatByAdb
         clearlogcatByAdb
         clearLogcatbyAdb
@@ -35,7 +35,12 @@ clear_logcat_by_adb_completion_repair() {
     )
 
     local -a stale_commands=(
+        clear_logcat_by_adb.sh
         clear_logcat_by_adb
+        /usr/local/bin/clearLogcatByAdb
+        /usr/local/bin/clearlogcatByAdb
+        /usr/local/bin/clearLogcatbyAdb
+        /usr/local/bin/clearlogcatbyAdb
         /usr/local/bin/clear_logcat_by_adb
     )
 

@@ -1,17 +1,20 @@
 #!/bin/bash
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-# shellcheck disable=SC1091
-source "${SCRIPT_DIR}/voice_build_common.sh"
+set -e
 
-DEFAULT_DEVICE_SERIAL=""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck disable=SC1091
+source "${REPO_ROOT}/voice_build/voice_build_common.sh"
+
+DEFAULT_DEVICE_SERIAL="f6e277ff"
 DEVICE_SERIAL="${DEFAULT_DEVICE_SERIAL}"
 SERVICE_NAME="com.autolink.voiceassistant/com.autolink.voiceassistant.service.VoiceCommonService"
 SEMAN_VALUE="1"
 
 print_device_usage() {
     echo "用法: $0 [-s device_serial]"
-    echo "  -s device_serial  指定 adb 设备序列号"
+    echo "  -s device_serial  指定台架设备序列号，默认: ${DEFAULT_DEVICE_SERIAL}"
 }
 
 adb_cmd() {
@@ -31,9 +34,10 @@ if [ "$#" -gt 0 ]; then
     exit 1
 fi
 
-if [ -n "${DEVICE_SERIAL}" ]; then
-    ensure_device_ready "${DEVICE_SERIAL}"
-fi
+ensure_device_ready "${DEVICE_SERIAL}"
+DEVICE_NAME=$(get_device_display_name "${DEVICE_SERIAL}")
 
+echo "当前台架设备: ${DEVICE_SERIAL} (${DEVICE_NAME})"
 echo "执行音按键服务"
 adb_cmd shell am startservice     -n "${SERVICE_NAME}"     --es "seman" "${SEMAN_VALUE}"
+echo "已触发音按键服务"

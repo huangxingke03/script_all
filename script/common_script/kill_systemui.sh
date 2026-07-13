@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-source "$SCRIPT_DIR/voice_build_common.sh"
+source "$SCRIPT_DIR/../voice_build_common.sh"
 
 DEFAULT_DEVICE_SERIAL="f6e277ff"
 DEVICE_SERIAL="$DEFAULT_DEVICE_SERIAL"
