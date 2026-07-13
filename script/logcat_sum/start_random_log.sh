@@ -2,23 +2,15 @@
 
 set -e
 
-SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-LOG_DIR="/home/huangxingke/下载"
-COMMAND_DIR="/home/huangxingke/project/Python/script"
-MAIN_SCRIPT="${COMMAND_DIR}/start_random_log.sh"
-START_WRAPPER="${COMMAND_DIR}/StartRandomLog.sh"
-STOP_WRAPPER="${COMMAND_DIR}/StopRandomLog.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOWNLOAD_ROOT="/home/huangxingke/下载"
 DEFAULT_ACTION="start"
 ACTION="${DEFAULT_ACTION}"
 CUSTOM_LOG_NAME=""
 DEVICE_SERIAL=""
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+TIMESTAMP="$(date +"%Y%m%d_%H%M%S")"
 
-if [ ! -f "${MAIN_SCRIPT}" ]; then
-    MAIN_SCRIPT="${SCRIPT_DIR}/start_random_log.sh"
-fi
-
-usage() {
+print_usage() {
     echo "用法: $0 [-s device_serial] [start [自定义文件名] | stop | 自定义文件名]"
     echo "  -s device_serial  指定 adb 设备序列号"
 }
@@ -63,23 +55,31 @@ ensure_device_ready() {
     fi
 }
 
+adb_cmd() {
+    if [ -n "${DEVICE_SERIAL}" ]; then
+        adb -s "${DEVICE_SERIAL}" "$@"
+    else
+        adb "$@"
+    fi
+}
+
 while getopts ":s:h" opt; do
     case "${opt}" in
         s)
             DEVICE_SERIAL="${OPTARG}"
             ;;
         h)
-            usage
+            print_usage
             exit 0
             ;;
         :)
             echo "错误: -${OPTARG} 需要传入设备序列号"
-            usage
+            print_usage
             exit 1
             ;;
         \?)
             echo "错误: 不支持的参数 -${OPTARG}"
-            usage
+            print_usage
             exit 1
             ;;
     esac
@@ -104,17 +104,15 @@ else
     ACTION="${DEFAULT_ACTION}"
 fi
 
-DEVICE_TAG=$(sanitize_device_tag "${DEVICE_SERIAL}")
-LEGACY_PID_FILE="${LOG_DIR}/logcat_${DEVICE_TAG}.pid"
+DEVICE_TAG="$(sanitize_device_tag "${DEVICE_SERIAL}")"
+LEGACY_PID_FILE="${DOWNLOAD_ROOT}/logcat_${DEVICE_TAG}.pid"
 
 if [ -n "${CUSTOM_LOG_NAME}" ]; then
-    LOG_FILE="${LOG_DIR}/${CUSTOM_LOG_NAME}"
+    LOG_FILE="${DOWNLOAD_ROOT}/${CUSTOM_LOG_NAME}"
+elif [ -n "${DEVICE_SERIAL}" ]; then
+    LOG_FILE="${DOWNLOAD_ROOT}/log_${DEVICE_TAG}_${TIMESTAMP}.log"
 else
-    if [ -n "${DEVICE_SERIAL}" ]; then
-        LOG_FILE="${LOG_DIR}/log_${DEVICE_TAG}_${TIMESTAMP}.log"
-    else
-        LOG_FILE="${LOG_DIR}/log_${TIMESTAMP}.log"
-    fi
+    LOG_FILE="${DOWNLOAD_ROOT}/log_${TIMESTAMP}.log"
 fi
 
 is_logcat_capture_pid() {
@@ -159,14 +157,6 @@ find_logcat_capture_pids() {
     done
 }
 
-adb_cmd() {
-    if [ -n "${DEVICE_SERIAL}" ]; then
-        adb -s "${DEVICE_SERIAL}" "$@"
-    else
-        adb "$@"
-    fi
-}
-
 stop_capture_by_pid() {
     local pid="$1"
     local attempt
@@ -193,7 +183,6 @@ stop_capture_by_pid() {
     fi
 
     echo "✅ 日志抓取已停止"
-    return 0
 }
 
 stop_capture() {
@@ -202,33 +191,15 @@ stop_capture() {
 
     while IFS= read -r pid; do
         [ -n "${pid}" ] || continue
-
         stop_capture_by_pid "${pid}" || return 1
         stopped_any=1
     done < <(find_logcat_capture_pids)
 
-    if [ -f "${LEGACY_PID_FILE}" ]; then
-        rm -f "${LEGACY_PID_FILE}"
-    fi
+    rm -f "${LEGACY_PID_FILE}"
 
     if [ "${stopped_any}" -eq 0 ]; then
         echo "当前没有运行中的日志抓取进程"
     fi
-    return 0
-}
-
-ensure_command_scripts() {
-    cat > "${STOP_WRAPPER}" <<EOF2
-#!/bin/bash
-"${MAIN_SCRIPT}" "\$@" stop
-EOF2
-
-    cat > "${START_WRAPPER}" <<EOF3
-#!/bin/bash
-"${MAIN_SCRIPT}" "\$@"
-EOF3
-
-    chmod +x "${STOP_WRAPPER}" "${START_WRAPPER}"
 }
 
 start_capture() {
@@ -249,15 +220,12 @@ start_capture() {
 
     adb_cmd logcat -c
     echo "==================== 开始抓取 $(date +"%Y-%m-%d %H:%M:%S") ====================" > "${LOG_FILE}"
-
     adb_cmd logcat -v time >> "${LOG_FILE}" 2>&1 &
-    LOG_PID=$!
 
-    echo "✅ 日志抓取已启动！(PID: ${LOG_PID})"
-    ensure_command_scripts
-    echo "启动命令： ./StartRandomLog.sh [-s device_serial] [自定义文件名]"
-    echo "停止命令： ./StopRandomLog.sh [-s device_serial]"
-    echo ""
+    echo "✅ 日志抓取已启动！(PID: $!)"
+    echo "启动命令： startRandomLog [-s device_serial] [自定义文件名]"
+    echo "停止命令： stopRandomLog [-s device_serial]"
+    echo
 }
 
 case "${ACTION}" in
@@ -268,7 +236,7 @@ case "${ACTION}" in
         stop_capture
         ;;
     *)
-        usage
+        print_usage
         exit 1
         ;;
 esac

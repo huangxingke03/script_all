@@ -25,16 +25,26 @@ _voice_completion_reset() {
     local -a all_commands=(
         ./voice_assistant_d01.sh
         ./voice_assistant_kp31.sh
+        ./voice_assistant_t12a.sh
         ./voice_setting_d01.sh
         ./voice_setting_kp31.sh
-        ./xunfeikp31
-        ./kill_systemui.sh
+        ./common_script/start_iflytek_page.sh
+        ./voice_build/voice_assistant_d01.sh
+        ./voice_build/voice_assistant_kp31.sh
+        ./voice_build/voice_assistant_t12a.sh
+        ./voice_build/voice_setting_d01.sh
+        ./voice_build/voice_setting_kp31.sh
+        ./common_script/kill_systemui.sh
         voice_assistant_d01.sh
-        kill_systemui.sh
         voice_assistant_kp31.sh
+        voice_assistant_t12a.sh
         voice_setting_d01.sh
         voice_setting_kp31.sh
-        xunfeikp31
+        startIflytekPage
+        startiflytekPage
+        startIflytekpage
+        startiflytekpage
+        start_iflytek_page
         /usr/local/bin/voiceAssistantD01
         /usr/local/bin/voiceassistantD01
         /usr/local/bin/voiceAssistantd01
@@ -43,6 +53,14 @@ _voice_completion_reset() {
         /usr/local/bin/voiceassistantKp31
         /usr/local/bin/voiceAssistantkp31
         /usr/local/bin/voiceassistantkp31
+        voiceAssistantT12a
+        voiceassistantT12a
+        voiceAssistantt12a
+        voiceassistantt12a
+        /usr/local/bin/voiceAssistantT12a
+        /usr/local/bin/voiceassistantT12a
+        /usr/local/bin/voiceAssistantt12a
+        /usr/local/bin/voiceassistantt12a
         /usr/local/bin/voiceSettingD01
         /usr/local/bin/voicesettingD01
         /usr/local/bin/voiceSettingd01
@@ -51,28 +69,11 @@ _voice_completion_reset() {
         /usr/local/bin/voicesettingKp31
         /usr/local/bin/voiceSettingkp31
         /usr/local/bin/voicesettingkp31
-        /usr/local/bin/xunfeikp31
-        /usr/local/bin/Xunfeikp31
-        /usr/local/bin/XunFeiKp31
-        /usr/local/bin/xunfeiKp31
-        /usr/local/bin/xunfeiKP31
-        /usr/local/bin/stwc
-        /usr/local/bin/stwc.sh
-        /usr/local/bin/Stwc
-        /usr/local/bin/StwC
-        /usr/local/bin/StWc
-        /usr/local/bin/StWC
-        /usr/local/bin/STwc
-        /usr/local/bin/STwC
-        /usr/local/bin/STWc
-        /usr/local/bin/STWC
-        /usr/local/bin/sTwc
-        /usr/local/bin/sTwC
-        /usr/local/bin/sTWc
-        /usr/local/bin/sTWC
-        /usr/local/bin/stWc
-        /usr/local/bin/stWC
-        /usr/local/bin/stwC
+        /usr/local/bin/startIflytekPage
+        /usr/local/bin/startiflytekPage
+        /usr/local/bin/startIflytekpage
+        /usr/local/bin/startiflytekpage
+        /usr/local/bin/start_iflytek_page
         /usr/local/bin/killSystemui
         /usr/local/bin/killsystemUi
         /usr/local/bin/killsystemui
@@ -99,6 +100,10 @@ _voice_completion_reset() {
         voiceassistantKp31
         voiceAssistantkp31
         voiceassistantkp31
+        voiceAssistantT12a
+        voiceassistantT12a
+        voiceAssistantt12a
+        voiceassistantt12a
         voiceSettingD01
         voicesettingD01
         voiceSettingd01
@@ -107,28 +112,11 @@ _voice_completion_reset() {
         voicesettingKp31
         voiceSettingkp31
         voicesettingkp31
-        xunfeikp31
-        Xunfeikp31
-        XunFeiKp31
-        xunfeiKp31
-        xunfeiKP31
-        stwc
-        stwc.sh
-        Stwc
-        StwC
-        StWc
-        StWC
-        STwc
-        STwC
-        STWc
-        STWC
-        sTwc
-        sTwC
-        sTWc
-        sTWC
-        stWc
-        stWC
-        stwC
+        startIflytekPage
+        startiflytekPage
+        startIflytekpage
+        startiflytekpage
+        start_iflytek_page
         killSystemui
         killsystemUi
         killsystemui
@@ -159,14 +147,25 @@ _voice_completion_bind() {
     local -a supported_commands=(
         ./voice_assistant_d01.sh
         ./voice_assistant_kp31.sh
+        ./voice_assistant_t12a.sh
         ./voice_setting_d01.sh
         ./voice_setting_kp31.sh
-        ./xunfeikp31
+        ./common_script/start_iflytek_page.sh
+        ./voice_build/voice_assistant_d01.sh
+        ./voice_build/voice_assistant_kp31.sh
+        ./voice_build/voice_assistant_t12a.sh
+        ./voice_build/voice_setting_d01.sh
+        ./voice_build/voice_setting_kp31.sh
         voice_assistant_d01.sh
         voice_assistant_kp31.sh
+        voice_assistant_t12a.sh
         voice_setting_d01.sh
         voice_setting_kp31.sh
-        xunfeikp31
+        startIflytekPage
+        startiflytekPage
+        startIflytekpage
+        startiflytekpage
+        start_iflytek_page
         /usr/local/bin/voiceAssistantD01
         /usr/local/bin/voiceassistantD01
         /usr/local/bin/voiceAssistantd01
@@ -175,6 +174,14 @@ _voice_completion_bind() {
         /usr/local/bin/voiceassistantKp31
         /usr/local/bin/voiceAssistantkp31
         /usr/local/bin/voiceassistantkp31
+        voiceAssistantT12a
+        voiceassistantT12a
+        voiceAssistantt12a
+        voiceassistantt12a
+        /usr/local/bin/voiceAssistantT12a
+        /usr/local/bin/voiceassistantT12a
+        /usr/local/bin/voiceAssistantt12a
+        /usr/local/bin/voiceassistantt12a
         /usr/local/bin/voiceSettingD01
         /usr/local/bin/voicesettingD01
         /usr/local/bin/voiceSettingd01
@@ -183,28 +190,11 @@ _voice_completion_bind() {
         /usr/local/bin/voicesettingKp31
         /usr/local/bin/voiceSettingkp31
         /usr/local/bin/voicesettingkp31
-        /usr/local/bin/xunfeikp31
-        /usr/local/bin/Xunfeikp31
-        /usr/local/bin/XunFeiKp31
-        /usr/local/bin/xunfeiKp31
-        /usr/local/bin/xunfeiKP31
-        /usr/local/bin/stwc
-        /usr/local/bin/stwc.sh
-        /usr/local/bin/Stwc
-        /usr/local/bin/StwC
-        /usr/local/bin/StWc
-        /usr/local/bin/StWC
-        /usr/local/bin/STwc
-        /usr/local/bin/STwC
-        /usr/local/bin/STWc
-        /usr/local/bin/STWC
-        /usr/local/bin/sTwc
-        /usr/local/bin/sTwC
-        /usr/local/bin/sTWc
-        /usr/local/bin/sTWC
-        /usr/local/bin/stWc
-        /usr/local/bin/stWC
-        /usr/local/bin/stwC
+        /usr/local/bin/startIflytekPage
+        /usr/local/bin/startiflytekPage
+        /usr/local/bin/startIflytekpage
+        /usr/local/bin/startiflytekpage
+        /usr/local/bin/start_iflytek_page
         /usr/local/bin/killSystemui
         /usr/local/bin/killsystemUi
         /usr/local/bin/killsystemui
@@ -231,6 +221,10 @@ _voice_completion_bind() {
         voiceassistantKp31
         voiceAssistantkp31
         voiceassistantkp31
+        voiceAssistantT12a
+        voiceassistantT12a
+        voiceAssistantt12a
+        voiceassistantt12a
         voiceSettingD01
         voicesettingD01
         voiceSettingd01
@@ -239,28 +233,11 @@ _voice_completion_bind() {
         voicesettingKp31
         voiceSettingkp31
         voicesettingkp31
-        xunfeikp31
-        Xunfeikp31
-        XunFeiKp31
-        xunfeiKp31
-        xunfeiKP31
-        stwc
-        stwc.sh
-        Stwc
-        StwC
-        StWc
-        StWC
-        STwc
-        STwC
-        STWc
-        STWC
-        sTwc
-        sTwC
-        sTWc
-        sTWC
-        stWc
-        stWC
-        stwC
+        startIflytekPage
+        startiflytekPage
+        startIflytekpage
+        startiflytekpage
+        start_iflytek_page
         killSystemui
         killsystemUi
         killsystemui

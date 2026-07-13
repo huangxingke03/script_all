@@ -1,13 +1,14 @@
 #!/bin/bash
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/voice_build_common.sh"
+source "${REPO_ROOT}/voice_build/voice_build_common.sh"
 
 DOWNLOAD_ROOT="/home/huangxingke/下载"
-DEFAULT_DEVICE_SERIAL=""
-REMOTE_PATH="/log"
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+DEFAULT_REMOTE_PATH="/log"
+REMOTE_PATH="${DEFAULT_REMOTE_PATH}"
+TIMESTAMP="$(date +"%Y%m%d_%H%M%S")"
 
 adb_cmd() {
     if [ -n "${DEVICE_SERIAL}" ]; then
@@ -17,10 +18,10 @@ adb_cmd() {
     fi
 }
 
-print_device_usage() {
+print_usage() {
     echo "用法: $0 [-s device_serial] [remote_path]"
     echo "  -s device_serial  指定 adb 设备序列号"
-    echo "  remote_path       可选，默认: /log"
+    echo "  remote_path       可选，默认: ${DEFAULT_REMOTE_PATH}"
 }
 
 parse_device_args "$@"
@@ -28,7 +29,7 @@ shift $((OPTIND - 1))
 
 if [ "$#" -gt 1 ]; then
     echo "错误: 最多只支持 1 个远端路径参数: $*"
-    print_device_usage
+    print_usage
     exit 1
 fi
 
@@ -40,9 +41,9 @@ if [ -n "${DEVICE_SERIAL}" ]; then
     ensure_device_ready "${DEVICE_SERIAL}"
 fi
 
-TARGET_BASENAME=$(basename "${REMOTE_PATH}")
-[ -n "${TARGET_BASENAME}" ] || TARGET_BASENAME="pull"
-TARGET_BASENAME="${TARGET_BASENAME//[^a-zA-Z0-9._-]/_}"
+TARGET_NAME="$(basename "${REMOTE_PATH}")"
+[ -n "${TARGET_NAME}" ] || TARGET_NAME="pull"
+TARGET_NAME="${TARGET_NAME//[^a-zA-Z0-9._-]/_}"
 
 TARGET_SERIAL="${DEVICE_SERIAL}"
 if [ -z "${TARGET_SERIAL}" ]; then
@@ -50,6 +51,7 @@ if [ -z "${TARGET_SERIAL}" ]; then
 fi
 [ -n "${TARGET_SERIAL}" ] || TARGET_SERIAL="unknown_device"
 TARGET_SERIAL="${TARGET_SERIAL//[^a-zA-Z0-9._-]/_}"
+
 TARGET_PREFIX="${TARGET_SERIAL}"
 if [ "${TARGET_SERIAL}" = "${DEFAULT_D01_DEVICE_SERIAL}" ] || [ "${TARGET_SERIAL}" = "3165e176" ]; then
     TARGET_PREFIX="D01_${TARGET_SERIAL}"
@@ -57,7 +59,7 @@ elif [ "${TARGET_SERIAL}" = "${DEFAULT_KP31_DEVICE_SERIAL}" ] || [ "${TARGET_SER
     TARGET_PREFIX="KP31_${TARGET_SERIAL}"
 fi
 
-TARGET_DIR="${DOWNLOAD_ROOT}/${TARGET_PREFIX}_${TARGET_BASENAME}_${TIMESTAMP}"
+TARGET_DIR="${DOWNLOAD_ROOT}/${TARGET_PREFIX}_${TARGET_NAME}_${TIMESTAMP}"
 mkdir -p "${TARGET_DIR}"
 
 echo "执行 adb root"

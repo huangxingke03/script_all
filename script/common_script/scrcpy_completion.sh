@@ -2,7 +2,7 @@
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/voice_build_common.sh"
+source "${SCRIPT_DIR}/../voice_build/voice_build_common.sh"
 
 _scrcpy_resolve_device_alias() {
     local value="${1,,}"
