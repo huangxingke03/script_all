@@ -2,7 +2,13 @@
 
 set -e
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE_ROOT="/home/huangxingke/project/Python/script"
+if [ -d "${SCRIPT_DIR}/download_jira" ] && [ -d "${SCRIPT_DIR}/download_feishu" ]; then
+  ROOT_DIR="${SCRIPT_DIR}"
+else
+  ROOT_DIR="${SOURCE_ROOT}"
+fi
 JIRA_DIR="${ROOT_DIR}/download_jira"
 FEISHU_DIR="${ROOT_DIR}/download_feishu"
 LOGCAT_DIR="${ROOT_DIR}/logcat_sum"
@@ -83,14 +89,16 @@ mkdir -p "${TARGET_DIR}"
 mkdir -p "${APPLICATIONS_DIR}"
 
 echo "===== 更新 JIRA 下载脚本 ====="
-install_script "${JIRA_DIR}/download_jira_cookie.sh" "${TARGET_DIR}/download_jira_cookie.sh"
-echo "更新--- ${TARGET_DIR}/download_jira_cookie.sh 成功----"
+rm -f "${TARGET_DIR}/download_jira_cookie.sh"
+cp "${JIRA_DIR}/download_jira_request.curl" "${TARGET_DIR}/download_jira_request.curl"
+echo "更新--- ${TARGET_DIR}/download_jira_request.curl 成功----"
 
 echo "===== 更新 Feishu 下载脚本 ====="
-install_script "${FEISHU_DIR}/download_bug_feishu_cookie.sh" "${TARGET_DIR}/download_bug_feishu_cookie.sh"
-echo "更新--- ${TARGET_DIR}/download_bug_feishu_cookie.sh 成功----"
-cp "${FEISHU_DIR}/download_bug_feishu_request.curl" "${TARGET_DIR}/download_bug_feishu_request.curl"
-echo "更新--- ${TARGET_DIR}/download_bug_feishu_request.curl 成功----"
+rm -f "${TARGET_DIR}/download_bug_feishu_cookie.sh" "${TARGET_DIR}/download_feishu_cookie.sh"
+install_script "${FEISHU_DIR}/download_feishu_config.sh" "${TARGET_DIR}/download_feishu_config.sh"
+echo "更新--- ${TARGET_DIR}/download_feishu_config.sh 成功----"
+cp "${FEISHU_DIR}/download_feishu_request.curl" "${TARGET_DIR}/download_feishu_request.curl"
+echo "更新--- ${TARGET_DIR}/download_feishu_request.curl 成功----"
 
 echo "===== 更新 Iflytek 脚本 ====="
 rm -f \
@@ -401,8 +409,6 @@ if [ -f "${COMMON_TOOL_DIR}/virt_manager.desktop" ]; then
   cp "${COMMON_TOOL_DIR}/virt_manager.desktop" "${APPLICATIONS_DIR}/virt-manager-shortcut.desktop"
   chmod +x "${APPLICATIONS_DIR}/virt-manager-shortcut.desktop"
   echo "更新--- ${APPLICATIONS_DIR}/virt-manager-shortcut.desktop 成功----"
-else
-  echo "更新--- 未找到 ${COMMON_TOOL_DIR}/virt_manager.desktop，跳过桌面快捷方式更新----"
 fi
 
 echo "===== 更新统一入口与下载别名 ====="
