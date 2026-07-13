@@ -5,10 +5,7 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COOKIE_FILE="${SCRIPT_DIR}/download_bug_feishu_cookie.sh"
-JIRA_COOKIE_FILE="${SCRIPT_DIR}/download_jira_cookie.sh"
-JIRA_COOKIE_FILE_FALLBACK="${SCRIPT_DIR}/../download_jira/download_jira_cookie.sh"
-
+CONFIG_FILE="${SCRIPT_DIR}/download_feishu_config.sh"
 PROJECT_KEY="6a4c8fa0bcd74934733780cc"
 WORK_ITEM_TYPE="issue"
 ISSUE_ID="${1:-7043211990}"
@@ -21,15 +18,20 @@ if [ -z "$ISSUE_ID" ]; then
     exit 1
 fi
 
-if [ ! -f "$COOKIE_FILE" ]; then
-    echo "缺少 Feishu 配置文件: $COOKIE_FILE"
-    exit 1
+if [ -f "$CONFIG_FILE" ]; then
+    # shellcheck disable=SC1090
+    source "$CONFIG_FILE"
 fi
 
-# shellcheck disable=SC1090
-source "$COOKIE_FILE"
-
-CURL_EXPORT_FILE="${FEISHU_CURL_EXPORT_FILE:-${SCRIPT_DIR}/download_bug_feishu_request.curl}"
+# Feishu request defaults. Keep these values current if the exported request changes.
+FEISHU_REQUEST_URL_DEFAULT="https://project.feishu.cn/goapi/v2/projects/6a4c8fa0bcd74934733780cc/work_item/issue/7042888694?"
+FEISHU_REFERER_DEFAULT="https://project.feishu.cn/sb69eb/issue/detail/7042888694?parentUrl=%2Fworkbench&openScene=3"
+FEISHU_USER_AGENT_DEFAULT="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+CURL_EXPORT_FILE="${FEISHU_CURL_EXPORT_FILE:-${SCRIPT_DIR}/download_feishu_request.curl}"
+FEISHU_COOKIE_FALLBACK="${FEISHU_COOKIE:-${COOKIE:-}}"
+FEISHU_REFERER_FALLBACK_VALUE="${FEISHU_REFERER_FALLBACK:-${REFERER:-${FEISHU_REFERER_DEFAULT}}}"
+FEISHU_USER_AGENT_FALLBACK_VALUE="${FEISHU_USER_AGENT_FALLBACK:-${USER_AGENT:-${FEISHU_USER_AGENT_DEFAULT}}}"
+FEISHU_REQUEST_URL_FALLBACK_VALUE="${FEISHU_REQUEST_URL_FALLBACK:-${REQUEST_URL:-${FEISHU_REQUEST_URL_DEFAULT}}}"
 
 extract_curl_field() {
     local curl_file="$1"
@@ -85,19 +87,38 @@ elif field_name == 'url':
 PYINNER
 }
 
-if [ ! -f "$CURL_EXPORT_FILE" ]; then
-    echo "缺少浏览器导出的 cURL 文件: $CURL_EXPORT_FILE"
-    echo "请把浏览器中 Copy as cURL (bash) 的内容保存到该文件后重试"
-    exit 1
+FEISHU_COOKIE=""
+FEISHU_REFERER=""
+FEISHU_USER_AGENT=""
+FEISHU_REQUEST_URL=""
+FEISHU_ATTACHMENT_JIRA_COOKIE_RESOLVED="${FEISHU_ATTACHMENT_JIRA_COOKIE:-}"
+
+if [ -f "$CURL_EXPORT_FILE" ]; then
+    FEISHU_COOKIE=$(extract_curl_field "$CURL_EXPORT_FILE" "cookie")
+    FEISHU_REFERER=$(extract_curl_field "$CURL_EXPORT_FILE" "referer")
+    FEISHU_USER_AGENT=$(extract_curl_field "$CURL_EXPORT_FILE" "user-agent")
+    FEISHU_REQUEST_URL=$(extract_curl_field "$CURL_EXPORT_FILE" "url")
 fi
 
-FEISHU_COOKIE=$(extract_curl_field "$CURL_EXPORT_FILE" "cookie")
-FEISHU_REFERER=$(extract_curl_field "$CURL_EXPORT_FILE" "referer")
-FEISHU_USER_AGENT=$(extract_curl_field "$CURL_EXPORT_FILE" "user-agent")
-FEISHU_REQUEST_URL=$(extract_curl_field "$CURL_EXPORT_FILE" "url")
+if [ -z "$FEISHU_ATTACHMENT_JIRA_COOKIE_RESOLVED" ] && [ -n "${FEISHU_ATTACHMENT_JIRA_CURL_EXPORT_FILE:-}" ] && [ -f "$FEISHU_ATTACHMENT_JIRA_CURL_EXPORT_FILE" ]; then
+    FEISHU_ATTACHMENT_JIRA_COOKIE_RESOLVED=$(extract_curl_field "$FEISHU_ATTACHMENT_JIRA_CURL_EXPORT_FILE" "cookie")
+fi
 
 if [ -z "$FEISHU_COOKIE" ]; then
-    echo "未能从 $CURL_EXPORT_FILE 提取 Cookie，请确认内容是浏览器导出的 cURL 请求"
+    FEISHU_COOKIE="$FEISHU_COOKIE_FALLBACK"
+fi
+if [ -z "$FEISHU_REFERER" ]; then
+    FEISHU_REFERER="$FEISHU_REFERER_FALLBACK_VALUE"
+fi
+if [ -z "$FEISHU_USER_AGENT" ]; then
+    FEISHU_USER_AGENT="$FEISHU_USER_AGENT_FALLBACK_VALUE"
+fi
+if [ -z "$FEISHU_REQUEST_URL" ]; then
+    FEISHU_REQUEST_URL="$FEISHU_REQUEST_URL_FALLBACK_VALUE"
+fi
+
+if [ -z "$FEISHU_COOKIE" ]; then
+    echo "缺少 Feishu Cookie，请在 $CONFIG_FILE 里配置 FEISHU_COOKIE，或把带 Cookie 的 cURL 保存到 $CURL_EXPORT_FILE"
     exit 1
 fi
 
@@ -116,37 +137,32 @@ if [ -n "$FEISHU_REQUEST_URL" ] && [[ "$FEISHU_REQUEST_URL" == *"/issue/detail/"
     ISSUE_URL="$FEISHU_REQUEST_URL"
 fi
 
-JIRA_COOKIE=""
-if [ -f "$JIRA_COOKIE_FILE" ]; then
-    # shellcheck disable=SC1090
-    source "$JIRA_COOKIE_FILE"
-    JIRA_COOKIE="${COOKIE:-}"
-elif [ -f "$JIRA_COOKIE_FILE_FALLBACK" ]; then
-    # shellcheck disable=SC1090
-    source "$JIRA_COOKIE_FILE_FALLBACK"
-    JIRA_COOKIE="${COOKIE:-}"
-fi
-
 build_curl_auth_args() {
     local url="$1"
+    if [ -z "$url" ]; then
+        echo "附件链接为空" >&2
+        return 1
+    fi
 
     if [[ "$url" == https://jira-shzj.auto-link.com.cn/* ]]; then
-        if [ -z "$JIRA_COOKIE" ]; then
-            echo "缺少 JIRA Cookie，无法下载附件: $url" >&2
+        if [ -z "$FEISHU_ATTACHMENT_JIRA_COOKIE_RESOLVED" ]; then
+            echo "缺少 JIRA 历史附件 Cookie，无法下载: $url" >&2
+            echo "请在 download_feishu_config.sh 里配置 FEISHU_ATTACHMENT_JIRA_CURL_EXPORT_FILE 或 FEISHU_ATTACHMENT_JIRA_COOKIE" >&2
             return 1
         fi
         CURL_AUTH_ARGS=(
-            -b "$JIRA_COOKIE"
+            -b "$FEISHU_ATTACHMENT_JIRA_COOKIE_RESOLVED"
             -H "Referer: https://jira-shzj.auto-link.com.cn/"
             -H "User-Agent: $FEISHU_USER_AGENT"
         )
-    else
-        CURL_AUTH_ARGS=(
-            -b "$FEISHU_COOKIE"
-            -H "Referer: $FEISHU_REFERER"
-            -H "User-Agent: $FEISHU_USER_AGENT"
-        )
+        return 0
     fi
+
+    CURL_AUTH_ARGS=(
+        -b "$FEISHU_COOKIE"
+        -H "Referer: $FEISHU_REFERER"
+        -H "User-Agent: $FEISHU_USER_AGENT"
+    )
 }
 
 fetch_issue_json() {
@@ -192,16 +208,221 @@ extract_issue_project_name() {
             else
                 scalar_text
             end;
+        def project_key_match:
+            (.field_key? // .key? // .api_name? // .name? // .id? // empty) as $k
+            | ($k | tostring) == "jira_CHERY_PROJECT";
+        def project_value:
+            (
+                .field_value?
+                // .value?
+                // .values?
+                // .text?
+                // .name?
+                // .display_value?
+                // .display_name?
+                // .field_value_map?.jira_CHERY_PROJECT?
+                // .jira_CHERY_PROJECT?
+                // empty
+            );
 
         [
             .. | objects | .jira_CHERY_PROJECT?,
             .. | objects | .field_value_map?.jira_CHERY_PROJECT?,
-            .. | objects | select((.field_key? // .key? // .api_name? // .name?) == "jira_CHERY_PROJECT") | (.field_value? // .value? // .values? // .text? // .name? // .display_value? // .display_name?)
+            .. | objects | select(project_key_match) | project_value,
+            .. | objects | .fields?.jira_CHERY_PROJECT?,
+            .. | objects | .custom_fields?.jira_CHERY_PROJECT?,
+            .. | objects | .custom_field_values?.jira_CHERY_PROJECT?,
+            .. | objects | .field_alias_map?.jira_CHERY_PROJECT?,
+            .. | objects | select(has("field_value_map")) | .field_value_map | to_entries[]? | select(.key == "jira_CHERY_PROJECT") | .value,
+            .. | objects | .items[]? | select(project_key_match) | project_value
         ]
         | map(first_scalar)
         | map(select(type == "string" and length > 0 and . != "null"))
         | .[0] // empty
     ' 2>/dev/null | head -n 1
+}
+
+extract_issue_project_debug_snippets() {
+    local issue_json="$1"
+
+    printf '%s' "$issue_json" | jq -c '
+        def project_key_match:
+            (.field_key? // .key? // .api_name? // .name? // .id? // empty) as $k
+            | ($k | tostring) == "jira_CHERY_PROJECT";
+
+        [
+            .. | objects | select(has("jira_CHERY_PROJECT")) | {path_hint: "jira_CHERY_PROJECT", value: .jira_CHERY_PROJECT},
+            .. | objects | select(.field_value_map?.jira_CHERY_PROJECT? != null) | {path_hint: "field_value_map.jira_CHERY_PROJECT", value: .field_value_map.jira_CHERY_PROJECT},
+            .. | objects | select(project_key_match) | {
+                path_hint: (.field_key? // .key? // .api_name? // .name? // .id? // "jira_CHERY_PROJECT"),
+                value: (.field_value? // .value? // .values? // .text? // .name? // .display_value? // .display_name? // .field_value_map?.jira_CHERY_PROJECT? // .jira_CHERY_PROJECT? // empty)
+            }
+        ]
+        | map(select(.value != null))
+        | .[:8]
+    ' 2>/dev/null
+}
+
+extract_issue_title() {
+    local issue_json="$1"
+    printf '%s' "$issue_json" | jq -r '.data.name // .data.title // empty' 2>/dev/null | head -n 1
+}
+
+extract_issue_software_version() {
+    local issue_json="$1"
+
+    printf '%s' "$issue_json" | jq -r '
+        def scalar_text:
+            if type == "string" then .
+            elif type == "number" or type == "boolean" then tostring
+            else empty
+            end;
+        def first_scalar:
+            if type == "array" then
+                map(
+                    if type == "object" then
+                        (.name // .label // .value // .text // .display_value // .display_name // empty) | scalar_text
+                    else
+                        scalar_text
+                    end
+                ) | map(select(length > 0)) | .[0] // empty
+            elif type == "object" then
+                (.name // .label // .value // .text // .display_value // .display_name // empty) | scalar_text
+            else
+                scalar_text
+            end;
+
+        [
+            .. | objects | .jira_Software_Version?,
+            .. | objects | .jira_customfield_11003_8_5?,
+            .. | objects | .field_value_map?.jira_Software_Version?,
+            .. | objects | .field_value_map?.jira_customfield_11003_8_5?,
+            .. | objects | .fields?.jira_Software_Version?,
+            .. | objects | .fields?.jira_customfield_11003_8_5?,
+            .. | objects | .custom_fields?.jira_Software_Version?,
+            .. | objects | .custom_fields?.jira_customfield_11003_8_5?,
+            .. | objects | .custom_field_values?.jira_Software_Version?,
+            .. | objects | .custom_field_values?.jira_customfield_11003_8_5?,
+            .. | objects | select((.field_key? // .key? // .api_name? // .name? // .id? // empty) == "jira_Software_Version")
+              | (.field_value? // .value? // .values? // .text? // .name? // .display_value? // .display_name?),
+            .. | objects | .doc_text?,
+            .. | objects | .doc_html?
+        ]
+        | map(first_scalar)
+        | map(select(type == "string" and length > 0 and . != "null"))
+        | .[0] // empty
+    ' 2>/dev/null | head -n 1
+}
+
+extract_project_name_from_version() {
+    local software_version="$1"
+    local upper_version prefix
+
+    upper_version=$(printf '%s' "$software_version" | tr '[:lower:]' '[:upper:]')
+    if [[ "$upper_version" =~ ^([A-Z0-9]+)_ ]]; then
+        prefix="${BASH_REMATCH[1]}"
+        case "$prefix" in
+            KP31|D01)
+                printf '%s\n' "$prefix"
+                return 0
+                ;;
+            KP31INT)
+                printf 'KP31_INT\n'
+                return 0
+                ;;
+        esac
+    fi
+    return 1
+}
+
+
+extract_issue_text_fallback() {
+    local issue_json="$1"
+
+    printf '%s' "$issue_json" | jq -r '
+        def scalar_text:
+            if type == "string" then .
+            elif type == "number" or type == "boolean" then tostring
+            else empty
+            end;
+        def flatten_text:
+            if type == "array" then
+                map(
+                    if type == "object" then
+                        (.name // .label // .value // .text // .display_value // .display_name // .title // empty) | scalar_text
+                    else
+                        scalar_text
+                    end
+                ) | join(" ")
+            elif type == "object" then
+                (.name // .label // .value // .text // .display_value // .display_name // .title // empty) | scalar_text
+            else
+                scalar_text
+            end;
+
+        [
+            .data.title?,
+            .data.name?,
+            .data.summary?,
+            .data.description?,
+            .data.tags?,
+            .data.labels?,
+            .data.field_value_map?.jira_Software_Version?,
+            .data.field_value_map?.jira_MCU_Version?,
+            .. | objects | .title?,
+            .. | objects | .label?,
+            .. | objects | .tags?,
+            .. | objects | .labels?
+        ]
+        | map(flatten_text)
+        | map(select(length > 0))
+        | join(" ")
+    ' 2>/dev/null
+}
+
+infer_issue_project_name() {
+    local issue_json="$1"
+    local project_name title_text fallback_text upper_text software_version
+
+    project_name=$(extract_issue_project_name "$issue_json")
+    if [ -n "$project_name" ]; then
+        printf '%s
+' "$project_name"
+        return 0
+    fi
+
+    software_version=$(extract_issue_software_version "$issue_json")
+    if project_name=$(extract_project_name_from_version "$software_version"); then
+        printf '%s
+' "$project_name"
+        return 0
+    fi
+
+    title_text=$(extract_issue_title "$issue_json")
+    upper_text=$(printf '%s' "$title_text" | tr '[:lower:]' '[:upper:]')
+    if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01)[\]】] ]]; then
+        printf '%s
+' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+
+    fallback_text=$(extract_issue_text_fallback "$issue_json")
+    upper_text=$(printf '%s' "$fallback_text" | tr '[:lower:]' '[:upper:]')
+    if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01)[\]】] ]]; then
+        printf '%s
+' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+
+    for candidate in KP31_INT KP31 D01; do
+        if [[ "$upper_text" == *"$candidate"* ]]; then
+            printf '%s
+' "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 build_save_dir() {
@@ -395,6 +616,22 @@ download_with_progress() {
     return "$status"
 }
 
+downloaded_file_is_login_page() {
+    local filepath="$1"
+    [ -s "$filepath" ] || return 1
+
+    python3 - "$filepath" <<'PYLOGIN'
+import sys
+from pathlib import Path
+path = Path(sys.argv[1])
+data = path.read_bytes()[:4096]
+text = data.decode('utf-8', 'ignore').lower()
+if '<!doctype html' in text and ('登录 - autolink-jira' in text or 'application-name" content="jira"' in text):
+    raise SystemExit(0)
+raise SystemExit(1)
+PYLOGIN
+}
+
 download_attachment() {
     local url="$1"
     local filepath="$2"
@@ -551,13 +788,22 @@ extract_archives_recursively() {
 }
 
 prepare_save_dir() {
+    local save_parent save_name existing_path
+
     echo "正在清理旧文件..."
-    if [ -e "$SAVE_DIR" ]; then
-        chmod -R u+rwX "$SAVE_DIR" 2>/dev/null || true
-        find "$SAVE_DIR" -type d -exec chmod u+rwx {} + 2>/dev/null || true
-        find "$SAVE_DIR" -type f -exec chmod u+rw {} + 2>/dev/null || true
-        rm -rf "$SAVE_DIR"
+    save_parent=$(dirname "$SAVE_DIR")
+    save_name=$(basename "$SAVE_DIR")
+
+    if [ -d "$save_parent" ]; then
+        while IFS= read -r -d '' existing_path; do
+            [ -e "$existing_path" ] || continue
+            chmod -R u+rwX "$existing_path" 2>/dev/null || true
+            find "$existing_path" -type d -exec chmod u+rwx {} + 2>/dev/null || true
+            find "$existing_path" -type f -exec chmod u+rw {} + 2>/dev/null || true
+            rm -rf "$existing_path"
+        done < <(find "$save_parent" -maxdepth 1 \( -name "*${ISSUE_ID}*" -o -name "$save_name" \) -print0 2>/dev/null)
     fi
+
     mkdir -p "$SAVE_DIR"
     chmod u+rwx "$SAVE_DIR" 2>/dev/null || true
 }
@@ -570,7 +816,8 @@ if ! printf '%s' "$ISSUE_JSON" | jq -e . >/dev/null 2>&1; then
     exit 1
 fi
 
-ISSUE_PROJECT_NAME=$(extract_issue_project_name "$ISSUE_JSON")
+ISSUE_PROJECT_NAME=$(infer_issue_project_name "$ISSUE_JSON")
+ISSUE_PROJECT_DEBUG=$(extract_issue_project_debug_snippets "$ISSUE_JSON")
 SAVE_DIR=$(build_save_dir "$ISSUE_ID" "$ISSUE_PROJECT_NAME")
 
 prepare_save_dir
@@ -578,6 +825,8 @@ prepare_save_dir
 echo "======================================"
 echo "开始下载 Feishu Issue: $ISSUE_ID"
 echo "Issue 链接: $ISSUE_URL"
+echo "ISSUE_PROJECT_NAME: ${ISSUE_PROJECT_NAME:-<empty>}"
+echo "项目字段命中片段: ${ISSUE_PROJECT_DEBUG:-[]}"
 echo "保存目录: $SAVE_DIR"
 echo "======================================"
 
@@ -598,10 +847,21 @@ for attachment in "${ATTACHMENTS[@]}"; do
     if [ -z "$filename" ] || [[ "$filename" == */* ]] || [[ "$filename" == issue ]]; then
         filename=$(resolve_filename_from_headers "$url" "${filename:-附件}")
     fi
+    filename=$(python3 - "$filename" <<'PYNAME'
+import sys
+from urllib.parse import unquote
+print(unquote(sys.argv[1]))
+PYNAME
+)
     filepath="${SAVE_DIR}/${filename}"
 
     echo "下载: $filename"
     if download_attachment "$url" "$filepath" "$filename" && [ -s "$filepath" ]; then
+        if downloaded_file_is_login_page "$filepath"; then
+            echo "下载失败: $filename (返回了 JIRA 登录页，请检查 FEISHU_ATTACHMENT_JIRA_CURL_EXPORT_FILE / FEISHU_ATTACHMENT_JIRA_COOKIE)"
+            rm -f "$filepath"
+            continue
+        fi
         size=$(du -h "$filepath" | cut -f1)
         echo "下载完成: $filename ($size)"
     else

@@ -12,18 +12,51 @@ fi
 # =============================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COOKIE_FILE="${SCRIPT_DIR}/download_jira_cookie.sh"
+JIRA_CURL_EXPORT_FILE="${JIRA_CURL_EXPORT_FILE:-/home/huangxingke/project/Python/script/download_jira/download_jira_request.curl}"
 
-if [ ! -f "$COOKIE_FILE" ]; then
-    echo "❌ 缺少 Cookie 配置文件: $COOKIE_FILE"
+extract_curl_field() {
+    local curl_file="$1"
+    local field_name="$2"
+
+    python3 - "$curl_file" "$field_name" <<'PYINNER'
+import shlex
+import sys
+from pathlib import Path
+
+curl_file = Path(sys.argv[1])
+field_name = sys.argv[2].lower()
+text = curl_file.read_text().replace('\\\n', ' ')
+parts = shlex.split(text)
+headers = {}
+url = ''
+cookie = ''
+
+for i, part in enumerate(parts):
+    if part in ('-H', '--header') and i + 1 < len(parts):
+        header = parts[i + 1]
+        if ':' in header:
+            name, value = header.split(':', 1)
+            headers[name.strip().lower()] = value.strip()
+    elif part in ('-b', '--cookie') and i + 1 < len(parts):
+        cookie = parts[i + 1]
+    elif not part.startswith('-') and part.startswith('http'):
+        url = part
+
+if field_name == 'cookie':
+    print(cookie or headers.get('cookie', ''), end='')
+elif field_name == 'url':
+    print(url, end='')
+PYINNER
+}
+
+if [ ! -f "$JIRA_CURL_EXPORT_FILE" ]; then
+    echo "❌ 缺少 JIRA cURL 配置文件: $JIRA_CURL_EXPORT_FILE"
     exit 1
 fi
 
-# shellcheck disable=SC1090
-source "$COOKIE_FILE"
-
+COOKIE=$(extract_curl_field "$JIRA_CURL_EXPORT_FILE" "cookie")
 if [ -z "$COOKIE" ]; then
-    echo "❌ Cookie 配置为空，请检查: $COOKIE_FILE"
+    echo "❌ 未能从 $JIRA_CURL_EXPORT_FILE 提取 Cookie，请确认内容包含 -b 或 Cookie 头"
     exit 1
 fi
 

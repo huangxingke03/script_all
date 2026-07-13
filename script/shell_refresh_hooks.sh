@@ -61,56 +61,43 @@ reload_local_completions() {
     _reload_rename_usb_dir_completion
 }
 
-# Legacy helper names still point to the unified updater, then refresh only the
-# completion group that changed so the current shell picks it up immediately.
-update_random_log_script() {
-    updateAll "$@" || return $?
+# Internal helper for refreshing published scripts without shadowing the installed
+# commands in ~/.local/bin.
+_run_published_script_update() {
+    command bash "${ROOT_DIR}/update_scipt_all.sh" "$@" || return $?
+}
+
+# Legacy completion refresh helpers remain private to this shell session.
+_refresh_random_log_after_update() {
+    _run_published_script_update "$@" || return $?
     _reload_random_log_completion
 }
 
-updateIflytekSysScript() {
-    updateSciptAll "$@" || return $?
+_refresh_iflytek_after_update() {
+    _run_published_script_update "$@" || return $?
     _reload_iflytek_completion
 }
 
-update_voice_build_script() {
-    updateSciptAll "$@" || return $?
+_refresh_voice_build_after_update() {
+    _run_published_script_update "$@" || return $?
     _reload_voice_completion
     _reload_scrcpy_completion
 }
 
-updatePullLogcatByAdb() {
-    updateAll "$@" || return $?
+_refresh_pull_logcat_after_update() {
+    _run_published_script_update "$@" || return $?
     _reload_pull_logcat_by_adb_completion
 }
 
-updateClearLogcatByAdb() {
-    updateAll "$@" || return $?
+_refresh_clear_logcat_after_update() {
+    _run_published_script_update "$@" || return $?
     _reload_clear_logcat_by_adb_completion
 }
 
-updateSoundBtClick() {
-    updateSciptAll "$@" || return $?
+_refresh_sound_bt_click_after_update() {
+    _run_published_script_update "$@" || return $?
     _reload_sound_bt_click_completion
     _reload_rename_usb_dir_completion
-}
-
-# Canonical update entrypoint for all published local scripts.
-updateSciptAll() {
-    command bash "${ROOT_DIR}/update_scipt_all.sh" "$@" || return $?
-}
-
-# Backward-compatible update aliases preserved for existing shell habits.
-updateAll() {
-    updateSciptAll "$@" || return $?
-}
-
-updateDownloadFeishu() {
-    updateAll "$@" || return $?
-}
-
-updateDownloadJira() {
-    updateAll "$@" || return $?
 }
 
 # Load current completion definitions immediately when this file is sourced.
