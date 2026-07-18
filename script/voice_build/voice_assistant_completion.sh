@@ -47,8 +47,12 @@ _voice_completion_reset() {
         start_iflytek_page
         /usr/local/bin/voiceAssistantD01
         /usr/local/bin/voiceassistantD01
+        /usr/local/bin/voiceAssistantDO1
+        /usr/local/bin/voiceassistantDO1
         /usr/local/bin/voiceAssistantd01
         /usr/local/bin/voiceassistantd01
+        /usr/local/bin/voiceAssistantdo1
+        /usr/local/bin/voiceassistantdo1
         /usr/local/bin/voiceAssistantKp31
         /usr/local/bin/voiceassistantKp31
         /usr/local/bin/voiceAssistantkp31
@@ -63,8 +67,12 @@ _voice_completion_reset() {
         /usr/local/bin/voiceassistantt12a
         /usr/local/bin/voiceSettingD01
         /usr/local/bin/voicesettingD01
+        /usr/local/bin/voiceSettingDO1
+        /usr/local/bin/voicesettingDO1
         /usr/local/bin/voiceSettingd01
         /usr/local/bin/voicesettingd01
+        /usr/local/bin/voiceSettingdo1
+        /usr/local/bin/voicesettingdo1
         /usr/local/bin/voiceSettingKp31
         /usr/local/bin/voicesettingKp31
         /usr/local/bin/voiceSettingkp31
@@ -94,8 +102,12 @@ _voice_completion_reset() {
         /usr/local/bin/kSuI
         voiceAssistantD01
         voiceassistantD01
+        voiceAssistantDO1
+        voiceassistantDO1
         voiceAssistantd01
         voiceassistantd01
+        voiceAssistantdo1
+        voiceassistantdo1
         voiceAssistantKp31
         voiceassistantKp31
         voiceAssistantkp31
@@ -106,8 +118,12 @@ _voice_completion_reset() {
         voiceassistantt12a
         voiceSettingD01
         voicesettingD01
+        voiceSettingDO1
+        voicesettingDO1
         voiceSettingd01
         voicesettingd01
+        voiceSettingdo1
+        voicesettingdo1
         voiceSettingKp31
         voicesettingKp31
         voiceSettingkp31
@@ -168,8 +184,12 @@ _voice_completion_bind() {
         start_iflytek_page
         /usr/local/bin/voiceAssistantD01
         /usr/local/bin/voiceassistantD01
+        /usr/local/bin/voiceAssistantDO1
+        /usr/local/bin/voiceassistantDO1
         /usr/local/bin/voiceAssistantd01
         /usr/local/bin/voiceassistantd01
+        /usr/local/bin/voiceAssistantdo1
+        /usr/local/bin/voiceassistantdo1
         /usr/local/bin/voiceAssistantKp31
         /usr/local/bin/voiceassistantKp31
         /usr/local/bin/voiceAssistantkp31
@@ -184,8 +204,12 @@ _voice_completion_bind() {
         /usr/local/bin/voiceassistantt12a
         /usr/local/bin/voiceSettingD01
         /usr/local/bin/voicesettingD01
+        /usr/local/bin/voiceSettingDO1
+        /usr/local/bin/voicesettingDO1
         /usr/local/bin/voiceSettingd01
         /usr/local/bin/voicesettingd01
+        /usr/local/bin/voiceSettingdo1
+        /usr/local/bin/voicesettingdo1
         /usr/local/bin/voiceSettingKp31
         /usr/local/bin/voicesettingKp31
         /usr/local/bin/voiceSettingkp31
@@ -215,8 +239,12 @@ _voice_completion_bind() {
         /usr/local/bin/kSuI
         voiceAssistantD01
         voiceassistantD01
+        voiceAssistantDO1
+        voiceassistantDO1
         voiceAssistantd01
         voiceassistantd01
+        voiceAssistantdo1
+        voiceassistantdo1
         voiceAssistantKp31
         voiceassistantKp31
         voiceAssistantkp31
@@ -227,8 +255,12 @@ _voice_completion_bind() {
         voiceassistantt12a
         voiceSettingD01
         voicesettingD01
+        voiceSettingDO1
+        voicesettingDO1
         voiceSettingd01
         voicesettingd01
+        voiceSettingdo1
+        voicesettingdo1
         voiceSettingKp31
         voicesettingKp31
         voiceSettingkp31

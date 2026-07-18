@@ -40,15 +40,27 @@ iflytek_sys_completion_repair() {
         update_kp31_sys.sh
         /usr/local/bin/updateD01IntSys
         /usr/local/bin/updated01IntSys
+        /usr/local/bin/updateDO1IntSys
+        /usr/local/bin/updatedo1IntSys
         /usr/local/bin/updateD01intSys
+        /usr/local/bin/updateDO1intSys
+        /usr/local/bin/updatedo1intSys
         /usr/local/bin/updated01intSys
         /usr/local/bin/updateD01Sys
         /usr/local/bin/updated01Sys
+        /usr/local/bin/updateDO1Sys
+        /usr/local/bin/updatedo1Sys
         /usr/local/bin/updateD01sys
+        /usr/local/bin/updateDO1sys
+        /usr/local/bin/updatedo1sys
         /usr/local/bin/updated01sys
         /usr/local/bin/updateD01pIntSys
         /usr/local/bin/updated01pIntSys
+        /usr/local/bin/updateDO1pIntSys
+        /usr/local/bin/updatedo1pIntSys
         /usr/local/bin/updateD01pintSys
+        /usr/local/bin/updateDO1pintSys
+        /usr/local/bin/updatedo1pintSys
         /usr/local/bin/updated01pintSys
         /usr/local/bin/updateKp31IntSys
         /usr/local/bin/updatekp31IntSys
@@ -60,15 +72,27 @@ iflytek_sys_completion_repair() {
         /usr/local/bin/updatekp31sys
         updateD01IntSys
         updated01IntSys
+        updateDO1IntSys
+        updatedo1IntSys
         updateD01intSys
+        updateDO1intSys
+        updatedo1intSys
         updated01intSys
         updateD01Sys
         updated01Sys
+        updateDO1Sys
+        updatedo1Sys
         updateD01sys
+        updateDO1sys
+        updatedo1sys
         updated01sys
         updateD01pIntSys
         updated01pIntSys
+        updateDO1pIntSys
+        updatedo1pIntSys
         updateD01pintSys
+        updateDO1pintSys
+        updatedo1pintSys
         updated01pintSys
         updateKp31IntSys
         updatekp31IntSys
