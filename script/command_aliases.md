@@ -3,8 +3,12 @@
 ## Voice Assistant D01
 - Standard: `voiceAssistantD01`
 - Variant: `voiceassistantD01`
+- Variant: `voiceAssistantDO1`
+- Variant: `voiceassistantDO1`
 - Variant: `voiceAssistantd01`
 - Variant: `voiceassistantd01`
+- Variant: `voiceAssistantdo1`
+- Variant: `voiceassistantdo1`
 
 ## Voice Assistant KP31
 - Standard: `voiceAssistantKp31`
@@ -21,8 +25,12 @@
 ## Voice Setting D01
 - Standard: `voiceSettingD01`
 - Variant: `voicesettingD01`
+- Variant: `voiceSettingDO1`
+- Variant: `voicesettingDO1`
 - Variant: `voiceSettingd01`
 - Variant: `voicesettingd01`
+- Variant: `voiceSettingdo1`
+- Variant: `voicesettingdo1`
 
 ## Voice Setting KP31
 - Standard: `voiceSettingKp31`
@@ -42,9 +50,14 @@
 ## Voice Assistant API D01
 - Standard: `makeVoiceAssistantApiD01`
 - Variant: `makevoiceAssistantApiD01`
+- Variant: `makeVoiceAssistantApiDO1`
+- Variant: `makevoiceAssistantApiDO1`
 - Variant: `makeVoiceAssistantApid01`
 - Variant: `makevoiceAssistantApid01`
 - Variant: `makevoiceassistantapid01`
+- Variant: `makeVoiceAssistantApido1`
+- Variant: `makevoiceAssistantApido1`
+- Variant: `makevoiceassistantapido1`
 - Variant: `make_voice_assistant_api_d01`
 - Variant: `make_voice_assistant_api_d01.sh`
 
@@ -58,8 +71,12 @@
 ## Start QNX D01
 - Standard: `startQnxD01`
 - Variant: `startqnxD01`
+- Variant: `startQnxDO1`
+- Variant: `startqnxDO1`
 - Variant: `startQnxd01`
 - Variant: `startqnxd01`
+- Variant: `startQnxdo1`
+- Variant: `startqnxdo1`
 - Variant: `start_qnx_d01`
 
 ## Kill SystemUI
@@ -141,16 +158,25 @@
 ## Iflytek System Update Commands
 - Standard: `updateD01IntSys`
 - Variant: `updated01IntSys`
+- Variant: `updateDO1IntSys`
+- Variant: `updatedo1IntSys`
 - Variant: `updateD01intSys`
-- Variant: `updated01intSys`
+- Variant: `updateDO1intSys`
+- Variant: `updatedo1intSys`
 - Standard: `updateD01Sys`
 - Variant: `updated01Sys`
+- Variant: `updateDO1Sys`
+- Variant: `updatedo1Sys`
 - Variant: `updateD01sys`
-- Variant: `updated01sys`
+- Variant: `updateDO1sys`
+- Variant: `updatedo1sys`
 - Standard: `updateD01pIntSys`
 - Variant: `updated01pIntSys`
+- Variant: `updateDO1pIntSys`
+- Variant: `updatedo1pIntSys`
 - Variant: `updateD01pintSys`
-- Variant: `updated01pintSys`
+- Variant: `updateDO1pintSys`
+- Variant: `updatedo1pintSys`
 - Standard: `updateKp31IntSys`
 - Variant: `updatekp31IntSys`
 - Variant: `updateKp31intSys`

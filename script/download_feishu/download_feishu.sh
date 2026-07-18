@@ -84,6 +84,8 @@ elif field_name == 'user-agent':
     print(user_agent or headers.get('user-agent', ''), end='')
 elif field_name == 'url':
     print(url, end='')
+else:
+    print(headers.get(field_name, ''), end='')
 PYINNER
 }
 
@@ -91,6 +93,8 @@ FEISHU_COOKIE=""
 FEISHU_REFERER=""
 FEISHU_USER_AGENT=""
 FEISHU_REQUEST_URL=""
+FEISHU_X_TOKEN=""
+MG_JIRA_PROJECT_FILE_LIST_URL="https://mg-jira.auto-link.com.cn/api/files/list"
 FEISHU_ATTACHMENT_JIRA_COOKIE_RESOLVED="${FEISHU_ATTACHMENT_JIRA_COOKIE:-}"
 
 if [ -f "$CURL_EXPORT_FILE" ]; then
@@ -98,6 +102,7 @@ if [ -f "$CURL_EXPORT_FILE" ]; then
     FEISHU_REFERER=$(extract_curl_field "$CURL_EXPORT_FILE" "referer")
     FEISHU_USER_AGENT=$(extract_curl_field "$CURL_EXPORT_FILE" "user-agent")
     FEISHU_REQUEST_URL=$(extract_curl_field "$CURL_EXPORT_FILE" "url")
+    FEISHU_X_TOKEN=$(extract_curl_field "$CURL_EXPORT_FILE" "x-token")
 fi
 
 if [ -z "$FEISHU_ATTACHMENT_JIRA_COOKIE_RESOLVED" ] && [ -n "${FEISHU_ATTACHMENT_JIRA_CURL_EXPORT_FILE:-}" ] && [ -f "$FEISHU_ATTACHMENT_JIRA_CURL_EXPORT_FILE" ]; then
@@ -183,6 +188,172 @@ fetch_issue_json() {
         -H "x-meego-source: web/release_train_1180306529026-1.0.5.7807" \
         -H "x-meego-timezone: 28800/28800" \
         "$ISSUE_API_URL"
+}
+
+build_target_request_url() {
+    local request_url="$1"
+    local target_issue_id="$2"
+
+    [ -n "$request_url" ] || return 0
+
+    python3 - "$request_url" "$target_issue_id" <<'PYURL'
+import re
+import sys
+
+request_url = sys.argv[1]
+target_issue_id = sys.argv[2]
+
+patterns = (
+    r'(/issue/detail/)\d+',
+    r'(/work_item/issue/)\d+',
+    r'(/log/issue/)\d+',
+    r'(/issue/)\d+',
+)
+
+updated = request_url
+for pattern in patterns:
+    updated, count = re.subn(pattern, r'\1' + target_issue_id, updated, count=1)
+    if count:
+        break
+
+print(updated, end='')
+PYURL
+}
+
+fetch_feishu_json_from_url() {
+    local api_url="$1"
+
+    [ -n "$api_url" ] || return 1
+
+    if [ -n "$FEISHU_X_TOKEN" ]; then
+        curl -f -sS \
+            -b "$FEISHU_COOKIE" \
+            -H "accept: application/json, text/plain, */*" \
+            -H "locale: zh" \
+            -H "Referer: $ISSUE_URL" \
+            -H "User-Agent: $FEISHU_USER_AGENT" \
+            -H "x-content-language: zh" \
+            -H "x-content-language-customized: zh" \
+            -H "x-lark-gw: 1" \
+            -H "x-meego-csrf-token: ${MEEGO_CSRF_TOKEN:-}" \
+            -H "x-meego-local: ${MEEGO_LOCAL:-28800}" \
+            -H "x-token: $FEISHU_X_TOKEN" \
+            "$api_url"
+        return
+    fi
+
+    curl -f -sS \
+        -b "$FEISHU_COOKIE" \
+        -H "accept: application/json, text/plain, */*" \
+        -H "locale: zh" \
+        -H "Referer: $ISSUE_URL" \
+        -H "User-Agent: $FEISHU_USER_AGENT" \
+        -H "x-content-language: zh" \
+        -H "x-content-language-customized: zh" \
+        -H "x-lark-gw: 1" \
+        -H "x-meego-csrf-token: ${MEEGO_CSRF_TOKEN:-}" \
+        -H "x-meego-local: ${MEEGO_LOCAL:-28800}" \
+        "$api_url"
+}
+
+fetch_mg_jira_local_upload_json() {
+    local project_key="$1"
+    local work_item_type="$2"
+    local work_item_id="$3"
+
+    [ -n "$project_key" ] || return 1
+    [ -n "$work_item_type" ] || return 1
+    [ -n "$work_item_id" ] || return 1
+
+    curl -f -sS \
+        -H 'Accept: */*' \
+        -H 'Origin: https://projectplg.feishupkg.com' \
+        -H 'Referer: https://projectplg.feishupkg.com/' \
+        -H "User-Agent: $FEISHU_USER_AGENT" \
+        "${MG_JIRA_PROJECT_FILE_LIST_URL}?project_key=${project_key}&work_item_type_key=${work_item_type}&work_item_id=${work_item_id}"
+}
+
+build_mg_jira_download_url() {
+    local file_id="$1"
+    local project_key="$2"
+    local work_item_type="$3"
+    local work_item_id="$4"
+
+    [ -n "$file_id" ] || return 1
+    [ -n "$project_key" ] || return 1
+    [ -n "$work_item_type" ] || return 1
+    [ -n "$work_item_id" ] || return 1
+
+    printf 'https://mg-jira.auto-link.com.cn/api/files/download/%s?project_key=%s&work_item_type_key=%s&work_item_id=%s&download=1' \
+        "$file_id" "$project_key" "$work_item_type" "$work_item_id"
+}
+
+collect_attachment_entries() {
+    python3 - "$@" <<'PYATTACH'
+import json
+import sys
+from pathlib import Path
+
+ATTACHMENT_HINTS = ('attach', 'upload', 'file')
+
+
+def load_json(path_str):
+    path = Path(path_str)
+    if not path.is_file() or path.stat().st_size == 0:
+        return None
+    try:
+        return json.loads(path.read_text())
+    except Exception:
+        return None
+
+
+def should_emit(path_parts, obj):
+    path_text = '.'.join(path_parts).lower()
+    keys = {str(k).lower() for k in obj.keys()}
+    if 'multi_attachment' in path_text:
+        return True
+    if any(hint in path_text for hint in ATTACHMENT_HINTS):
+        return True
+    if any(any(hint in key for hint in ATTACHMENT_HINTS) for key in keys):
+        return True
+    if set(keys).issubset({'url', 'name'}):
+        return True
+    return False
+
+
+def walk(node, path_parts, seen, emitted):
+    if isinstance(node, dict):
+        url = node.get('url')
+        name = node.get('name') or node.get('filename') or node.get('file_name')
+        if (
+            isinstance(url, str)
+            and url.startswith('http')
+            and isinstance(name, str)
+            and name.strip()
+            and should_emit(path_parts, node)
+        ):
+            key = (url.strip(), name.strip())
+            if key not in seen:
+                seen.add(key)
+                emitted.append(key)
+        for key, value in node.items():
+            walk(value, path_parts + [str(key)], seen, emitted)
+    elif isinstance(node, list):
+        for idx, value in enumerate(node):
+            walk(value, path_parts + [str(idx)], seen, emitted)
+
+
+seen = set()
+emitted = []
+for file_path in sys.argv[1:]:
+    obj = load_json(file_path)
+    if obj is None:
+        continue
+    walk(obj, [Path(file_path).stem], seen, emitted)
+
+for url, name in emitted:
+    print(f'{url}|{name}')
+PYATTACH
 }
 
 extract_issue_project_name() {
@@ -819,6 +990,45 @@ fi
 ISSUE_PROJECT_NAME=$(infer_issue_project_name "$ISSUE_JSON")
 ISSUE_PROJECT_DEBUG=$(extract_issue_project_debug_snippets "$ISSUE_JSON")
 SAVE_DIR=$(build_save_dir "$ISSUE_ID" "$ISSUE_PROJECT_NAME")
+DETAIL_JSON_FILE=$(mktemp)
+printf '%s' "$ISSUE_JSON" > "$DETAIL_JSON_FILE"
+TEMP_JSON_FILES=("$DETAIL_JSON_FILE")
+
+MG_JIRA_LOCAL_UPLOAD_JSON=""
+MG_JIRA_LOCAL_UPLOAD_JSON_FILE=""
+MG_JIRA_PROJECT_KEY=$(printf '%s' "$ISSUE_JSON" | jq -r '.data.project_key // .data.project?.project_key // .data.project?.key // empty' 2>/dev/null | head -n 1)
+if [ -n "$MG_JIRA_PROJECT_KEY" ]; then
+    MG_JIRA_LOCAL_UPLOAD_JSON=$(fetch_mg_jira_local_upload_json "$MG_JIRA_PROJECT_KEY" "$WORK_ITEM_TYPE" "$ISSUE_ID" 2>/dev/null || true)
+    if [ -n "$MG_JIRA_LOCAL_UPLOAD_JSON" ] && printf '%s' "$MG_JIRA_LOCAL_UPLOAD_JSON" | jq -e '.ok == true and (.data | type == "array")' >/dev/null 2>&1; then
+        MG_JIRA_LOCAL_UPLOAD_JSON=$(printf '%s' "$MG_JIRA_LOCAL_UPLOAD_JSON" | jq --arg project_key "$MG_JIRA_PROJECT_KEY" --arg work_item_type "$WORK_ITEM_TYPE" --arg work_item_id "$ISSUE_ID" '
+            .data |= map(. + {
+                url: ("https://mg-jira.auto-link.com.cn/api/files/download/" + .id + "?project_key=" + $project_key + "&work_item_type_key=" + $work_item_type + "&work_item_id=" + $work_item_id + "&download=1")
+            })
+        ')
+        MG_JIRA_LOCAL_UPLOAD_JSON_FILE=$(mktemp)
+        printf '%s' "$MG_JIRA_LOCAL_UPLOAD_JSON" > "$MG_JIRA_LOCAL_UPLOAD_JSON_FILE"
+        TEMP_JSON_FILES+=("$MG_JIRA_LOCAL_UPLOAD_JSON_FILE")
+    fi
+fi
+
+EXPORTED_REQUEST_JSON_URL=$(build_target_request_url "$FEISHU_REQUEST_URL" "$ISSUE_ID")
+EXPORTED_REQUEST_JSON_FILE=""
+if [ -n "$EXPORTED_REQUEST_JSON_URL" ] && [ "$EXPORTED_REQUEST_JSON_URL" != "$ISSUE_API_URL" ]; then
+    EXPORTED_REQUEST_JSON=$(fetch_feishu_json_from_url "$EXPORTED_REQUEST_JSON_URL" 2>/dev/null || true)
+    if [ -n "$EXPORTED_REQUEST_JSON" ] && printf '%s' "$EXPORTED_REQUEST_JSON" | jq -e . >/dev/null 2>&1; then
+        EXPORTED_REQUEST_JSON_FILE=$(mktemp)
+        printf '%s' "$EXPORTED_REQUEST_JSON" > "$EXPORTED_REQUEST_JSON_FILE"
+        TEMP_JSON_FILES+=("$EXPORTED_REQUEST_JSON_FILE")
+    fi
+fi
+
+cleanup_temp_json_files() {
+    local temp_file
+    for temp_file in "${TEMP_JSON_FILES[@]}"; do
+        [ -n "$temp_file" ] && rm -f "$temp_file"
+    done
+}
+trap cleanup_temp_json_files EXIT
 
 prepare_save_dir
 
@@ -830,15 +1040,14 @@ echo "项目字段命中片段: ${ISSUE_PROJECT_DEBUG:-[]}"
 echo "保存目录: $SAVE_DIR"
 echo "======================================"
 
-COUNT=$(printf '%s' "$ISSUE_JSON" | jq '.data.multi_attachment | length // 0')
+mapfile -t ATTACHMENTS < <(collect_attachment_entries "${TEMP_JSON_FILES[@]}")
+COUNT=${#ATTACHMENTS[@]}
 if [ "$COUNT" -eq 0 ]; then
-    echo "Issue 没有附件，或接口里未返回 multi_attachment"
+    echo "Issue 没有附件，或接口里未返回可识别的附件对象"
     exit 1
 fi
 
 echo "找到 $COUNT 个附件，开始下载..."
-
-mapfile -t ATTACHMENTS < <(printf '%s' "$ISSUE_JSON" | jq -r '.data.multi_attachment[]? | "\(.url)|\(.name)"')
 
 for attachment in "${ATTACHMENTS[@]}"; do
     IFS='|' read -r url filename <<< "$attachment"

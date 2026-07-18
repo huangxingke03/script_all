@@ -115,15 +115,27 @@ rm -f \
   "${TARGET_DIR}/updateIflytekSysScript" \
   "${TARGET_DIR}/updateD01IntSys" \
   "${TARGET_DIR}/updated01IntSys" \
+  "${TARGET_DIR}/updateDO1IntSys" \
+  "${TARGET_DIR}/updatedo1IntSys" \
   "${TARGET_DIR}/updateD01intSys" \
+  "${TARGET_DIR}/updateDO1intSys" \
+  "${TARGET_DIR}/updatedo1intSys" \
   "${TARGET_DIR}/updated01intSys" \
   "${TARGET_DIR}/updateD01Sys" \
   "${TARGET_DIR}/updated01Sys" \
+  "${TARGET_DIR}/updateDO1Sys" \
+  "${TARGET_DIR}/updatedo1Sys" \
   "${TARGET_DIR}/updateD01sys" \
+  "${TARGET_DIR}/updateDO1sys" \
+  "${TARGET_DIR}/updatedo1sys" \
   "${TARGET_DIR}/updated01sys" \
   "${TARGET_DIR}/updateD01pIntSys" \
   "${TARGET_DIR}/updated01pIntSys" \
+  "${TARGET_DIR}/updateDO1pIntSys" \
+  "${TARGET_DIR}/updatedo1pIntSys" \
   "${TARGET_DIR}/updateD01pintSys" \
+  "${TARGET_DIR}/updateDO1pintSys" \
+  "${TARGET_DIR}/updatedo1pintSys" \
   "${TARGET_DIR}/updated01pintSys" \
   "${TARGET_DIR}/updateKp31IntSys" \
   "${TARGET_DIR}/updatekp31IntSys" \
@@ -136,7 +148,11 @@ rm -f \
 
 install_script "${IFLYTEK_DIR}/update_d01_Int_sys.sh" "${TARGET_DIR}/updateD01IntSys"
 ln -sf "${TARGET_DIR}/updateD01IntSys" "${TARGET_DIR}/updated01IntSys"
+ln -sf "${TARGET_DIR}/updateD01IntSys" "${TARGET_DIR}/updateDO1IntSys"
+ln -sf "${TARGET_DIR}/updateD01IntSys" "${TARGET_DIR}/updatedo1IntSys"
 ln -sf "${TARGET_DIR}/updateD01IntSys" "${TARGET_DIR}/updateD01intSys"
+ln -sf "${TARGET_DIR}/updateD01IntSys" "${TARGET_DIR}/updateDO1intSys"
+ln -sf "${TARGET_DIR}/updateD01IntSys" "${TARGET_DIR}/updatedo1intSys"
 ln -sf "${TARGET_DIR}/updateD01IntSys" "${TARGET_DIR}/updated01intSys"
 ln -sf "${TARGET_DIR}/updateD01IntSys" "${TARGET_DIR}/update_d01_Int_sys"
 ln -sf "${TARGET_DIR}/updateD01IntSys" "${TARGET_DIR}/update_d01_Int_sys.sh"
@@ -144,7 +160,11 @@ echo "更新--- ${TARGET_DIR}/updateD01IntSys 成功----"
 
 install_script "${IFLYTEK_DIR}/update_d01_sys.sh" "${TARGET_DIR}/updateD01Sys"
 ln -sf "${TARGET_DIR}/updateD01Sys" "${TARGET_DIR}/updated01Sys"
+ln -sf "${TARGET_DIR}/updateD01Sys" "${TARGET_DIR}/updateDO1Sys"
+ln -sf "${TARGET_DIR}/updateD01Sys" "${TARGET_DIR}/updatedo1Sys"
 ln -sf "${TARGET_DIR}/updateD01Sys" "${TARGET_DIR}/updateD01sys"
+ln -sf "${TARGET_DIR}/updateD01Sys" "${TARGET_DIR}/updateDO1sys"
+ln -sf "${TARGET_DIR}/updateD01Sys" "${TARGET_DIR}/updatedo1sys"
 ln -sf "${TARGET_DIR}/updateD01Sys" "${TARGET_DIR}/updated01sys"
 ln -sf "${TARGET_DIR}/updateD01Sys" "${TARGET_DIR}/update_d01_sys"
 ln -sf "${TARGET_DIR}/updateD01Sys" "${TARGET_DIR}/update_d01_sys.sh"
@@ -152,7 +172,11 @@ echo "更新--- ${TARGET_DIR}/updateD01Sys 成功----"
 
 install_script "${IFLYTEK_DIR}/update_d01p_int_sys.sh" "${TARGET_DIR}/updateD01pIntSys"
 ln -sf "${TARGET_DIR}/updateD01pIntSys" "${TARGET_DIR}/updated01pIntSys"
+ln -sf "${TARGET_DIR}/updateD01pIntSys" "${TARGET_DIR}/updateDO1pIntSys"
+ln -sf "${TARGET_DIR}/updateD01pIntSys" "${TARGET_DIR}/updatedo1pIntSys"
 ln -sf "${TARGET_DIR}/updateD01pIntSys" "${TARGET_DIR}/updateD01pintSys"
+ln -sf "${TARGET_DIR}/updateD01pIntSys" "${TARGET_DIR}/updateDO1pintSys"
+ln -sf "${TARGET_DIR}/updateD01pIntSys" "${TARGET_DIR}/updatedo1pintSys"
 ln -sf "${TARGET_DIR}/updateD01pIntSys" "${TARGET_DIR}/updated01pintSys"
 ln -sf "${TARGET_DIR}/updateD01pIntSys" "${TARGET_DIR}/update_d01p_int_sys"
 ln -sf "${TARGET_DIR}/updateD01pIntSys" "${TARGET_DIR}/update_d01p_int_sys.sh"
@@ -178,22 +202,30 @@ ln -sf "${TARGET_DIR}/updateSciptAll" "${TARGET_DIR}/updateIflytekSysScript"
 echo "更新--- ${TARGET_DIR}/updateIflytekSysScript 成功----"
 
 echo "===== 更新 Voice Build 脚本 ====="
-rm -f   "${TARGET_DIR}/voice_build_common.sh"   "${TARGET_DIR}/voice_assistant_d01"   "${TARGET_DIR}/voice_assistant_kp31"   "${TARGET_DIR}/voice_assistant_t12a"   "${TARGET_DIR}/voice_setting_d01"   "${TARGET_DIR}/voice_setting_kp31"   "${TARGET_DIR}/voiceAssistantD01"   "${TARGET_DIR}/voiceassistantD01"   "${TARGET_DIR}/voiceAssistantd01"   "${TARGET_DIR}/voiceassistantd01"   "${TARGET_DIR}/voiceAssistantKp31"   "${TARGET_DIR}/voiceassistantKp31"   "${TARGET_DIR}/voiceAssistantkp31"   "${TARGET_DIR}/voiceassistantkp31"   "${TARGET_DIR}/voiceAssistantT12a"   "${TARGET_DIR}/voiceassistantT12a"   "${TARGET_DIR}/voiceAssistantt12a"   "${TARGET_DIR}/voiceassistantt12a"   "${TARGET_DIR}/voiceSettingD01"   "${TARGET_DIR}/voicesettingD01"   "${TARGET_DIR}/voiceSettingd01"   "${TARGET_DIR}/voicesettingd01"   "${TARGET_DIR}/voiceSettingKp31"   "${TARGET_DIR}/voicesettingKp31"   "${TARGET_DIR}/voiceSettingkp31"   "${TARGET_DIR}/voicesettingkp31"   "${TARGET_DIR}/update_voice_build_script"   "${TARGET_DIR}/restartSystemUi"   "${TARGET_DIR}/restartsystemUi"   "${TARGET_DIR}/restartSystemui"   "${TARGET_DIR}/restartsystemui"   "${TARGET_DIR}/rsui"   "${TARGET_DIR}/Rsui"   "${TARGET_DIR}/RSui"   "${TARGET_DIR}/RSUI"   "${TARGET_DIR}/RsUi"   "${TARGET_DIR}/RsUI"   "${TARGET_DIR}/RsuI"   "${TARGET_DIR}/RSuI"   "${TARGET_DIR}/rSui"   "${TARGET_DIR}/rSUi"   "${TARGET_DIR}/rSUI"   "${TARGET_DIR}/rsUi"   "${TARGET_DIR}/rsUI"   "${TARGET_DIR}/rsuI"   "${TARGET_DIR}/rSuI"
+rm -f   "${TARGET_DIR}/voice_build_common.sh"   "${TARGET_DIR}/voice_assistant_d01"   "${TARGET_DIR}/voice_assistant_kp31"   "${TARGET_DIR}/voice_assistant_t12a"   "${TARGET_DIR}/voice_setting_d01"   "${TARGET_DIR}/voice_setting_kp31"   "${TARGET_DIR}/voiceAssistantD01"   "${TARGET_DIR}/voiceassistantD01"   "${TARGET_DIR}/voiceAssistantDO1"   "${TARGET_DIR}/voiceassistantDO1"   "${TARGET_DIR}/voiceAssistantd01"   "${TARGET_DIR}/voiceassistantd01"   "${TARGET_DIR}/voiceAssistantdo1"   "${TARGET_DIR}/voiceassistantdo1"   "${TARGET_DIR}/voiceAssistantKp31"   "${TARGET_DIR}/voiceassistantKp31"   "${TARGET_DIR}/voiceAssistantkp31"   "${TARGET_DIR}/voiceassistantkp31"   "${TARGET_DIR}/voiceAssistantT12a"   "${TARGET_DIR}/voiceassistantT12a"   "${TARGET_DIR}/voiceAssistantt12a"   "${TARGET_DIR}/voiceassistantt12a"   "${TARGET_DIR}/voiceSettingD01"   "${TARGET_DIR}/voicesettingD01"   "${TARGET_DIR}/voiceSettingDO1"   "${TARGET_DIR}/voicesettingDO1"   "${TARGET_DIR}/voiceSettingd01"   "${TARGET_DIR}/voicesettingd01"   "${TARGET_DIR}/voiceSettingdo1"   "${TARGET_DIR}/voicesettingdo1"   "${TARGET_DIR}/voiceSettingKp31"   "${TARGET_DIR}/voicesettingKp31"   "${TARGET_DIR}/voiceSettingkp31"   "${TARGET_DIR}/voicesettingkp31"   "${TARGET_DIR}/update_voice_build_script"   "${TARGET_DIR}/restartSystemUi"   "${TARGET_DIR}/restartsystemUi"   "${TARGET_DIR}/restartSystemui"   "${TARGET_DIR}/restartsystemui"   "${TARGET_DIR}/rsui"   "${TARGET_DIR}/Rsui"   "${TARGET_DIR}/RSui"   "${TARGET_DIR}/RSUI"   "${TARGET_DIR}/RsUi"   "${TARGET_DIR}/RsUI"   "${TARGET_DIR}/RsuI"   "${TARGET_DIR}/RSuI"   "${TARGET_DIR}/rSui"   "${TARGET_DIR}/rSUi"   "${TARGET_DIR}/rSUI"   "${TARGET_DIR}/rsUi"   "${TARGET_DIR}/rsUI"   "${TARGET_DIR}/rsuI"   "${TARGET_DIR}/rSuI"
 
 install_script "${VOICE_BUILD_DIR}/voice_build_common.sh" "${TARGET_DIR}/voice_build_common.sh"
 echo "更新--- ${TARGET_DIR}/voice_build_common.sh 成功----"
 
 install_script "${VOICE_BUILD_DIR}/voice_assistant_d01.sh" "${TARGET_DIR}/voiceAssistantD01"
 ln -sf "${TARGET_DIR}/voiceAssistantD01" "${TARGET_DIR}/voiceassistantD01"
+ln -sf "${TARGET_DIR}/voiceAssistantD01" "${TARGET_DIR}/voiceAssistantDO1"
+ln -sf "${TARGET_DIR}/voiceAssistantD01" "${TARGET_DIR}/voiceassistantDO1"
 ln -sf "${TARGET_DIR}/voiceAssistantD01" "${TARGET_DIR}/voiceAssistantd01"
 ln -sf "${TARGET_DIR}/voiceAssistantD01" "${TARGET_DIR}/voiceassistantd01"
+ln -sf "${TARGET_DIR}/voiceAssistantD01" "${TARGET_DIR}/voiceAssistantdo1"
+ln -sf "${TARGET_DIR}/voiceAssistantD01" "${TARGET_DIR}/voiceassistantdo1"
 ln -sf "${TARGET_DIR}/voiceAssistantD01" "${TARGET_DIR}/voice_assistant_d01"
 echo "更新--- ${TARGET_DIR}/voiceAssistantD01 成功----"
 
 install_script "${VOICE_BUILD_DIR}/voice_setting_d01.sh" "${TARGET_DIR}/voiceSettingD01"
 ln -sf "${TARGET_DIR}/voiceSettingD01" "${TARGET_DIR}/voicesettingD01"
+ln -sf "${TARGET_DIR}/voiceSettingD01" "${TARGET_DIR}/voiceSettingDO1"
+ln -sf "${TARGET_DIR}/voiceSettingD01" "${TARGET_DIR}/voicesettingDO1"
 ln -sf "${TARGET_DIR}/voiceSettingD01" "${TARGET_DIR}/voiceSettingd01"
 ln -sf "${TARGET_DIR}/voiceSettingD01" "${TARGET_DIR}/voicesettingd01"
+ln -sf "${TARGET_DIR}/voiceSettingD01" "${TARGET_DIR}/voiceSettingdo1"
+ln -sf "${TARGET_DIR}/voiceSettingD01" "${TARGET_DIR}/voicesettingdo1"
 ln -sf "${TARGET_DIR}/voiceSettingD01" "${TARGET_DIR}/voice_setting_d01"
 echo "更新--- ${TARGET_DIR}/voiceSettingD01 成功----"
 
@@ -229,9 +261,14 @@ echo "更新--- ${TARGET_DIR}/makeVoiceAssistantApiKp31 成功----"
 
 install_script "${VOICE_BUILD_DIR}/make_voice_assistant_api_d01.sh" "${TARGET_DIR}/makeVoiceAssistantApiD01"
 ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceAssistantApiD01"
+ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makeVoiceAssistantApiDO1"
+ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceAssistantApiDO1"
 ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makeVoiceAssistantApid01"
 ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceAssistantApid01"
 ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceassistantapid01"
+ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makeVoiceAssistantApido1"
+ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceAssistantApido1"
+ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceassistantapido1"
 ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/make_voice_assistant_api_d01"
 ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/make_voice_assistant_api_d01.sh"
 echo "更新--- ${TARGET_DIR}/makeVoiceAssistantApiD01 成功----"
@@ -279,8 +316,12 @@ rm -f \
   "${TARGET_DIR}/start_iflytek_page" \
   "${TARGET_DIR}/startQnxD01" \
   "${TARGET_DIR}/startqnxD01" \
+  "${TARGET_DIR}/startQnxDO1" \
+  "${TARGET_DIR}/startqnxDO1" \
   "${TARGET_DIR}/startQnxd01" \
   "${TARGET_DIR}/startqnxd01" \
+  "${TARGET_DIR}/startQnxdo1" \
+  "${TARGET_DIR}/startqnxdo1" \
   "${TARGET_DIR}/start_qnx_d01" \
   "${TARGET_DIR}/rebootDevice" \
   "${TARGET_DIR}/rebootdevice" \
@@ -339,8 +380,12 @@ echo "更新--- ${TARGET_DIR}/startIflytekPage 成功----"
 
 install_script "${COMMON_TOOL_DIR}/start_qnx_d01.sh" "${TARGET_DIR}/startQnxD01"
 ln -sf "${TARGET_DIR}/startQnxD01" "${TARGET_DIR}/startqnxD01"
+ln -sf "${TARGET_DIR}/startQnxD01" "${TARGET_DIR}/startQnxDO1"
+ln -sf "${TARGET_DIR}/startQnxD01" "${TARGET_DIR}/startqnxDO1"
 ln -sf "${TARGET_DIR}/startQnxD01" "${TARGET_DIR}/startQnxd01"
 ln -sf "${TARGET_DIR}/startQnxD01" "${TARGET_DIR}/startqnxd01"
+ln -sf "${TARGET_DIR}/startQnxD01" "${TARGET_DIR}/startQnxdo1"
+ln -sf "${TARGET_DIR}/startQnxD01" "${TARGET_DIR}/startqnxdo1"
 ln -sf "${TARGET_DIR}/startQnxD01" "${TARGET_DIR}/start_qnx_d01"
 echo "更新--- ${TARGET_DIR}/startQnxD01 成功----"
 
