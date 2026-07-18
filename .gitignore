@@ -55,3 +55,7 @@ ehthumbs.db
 *.tmp
 *.bak
 #安卓项目相关
+
+# Feishu/Jira 本地导出请求（含敏感会话信息，不提交）
+script/download_feishu/download_feishu_request.curl
+script/download_feishu/download_bug_feishu_request.curl
