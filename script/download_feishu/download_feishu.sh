@@ -1052,7 +1052,15 @@ echo "找到 $COUNT 个附件，开始下载..."
 for attachment in "${ATTACHMENTS[@]}"; do
     IFS='|' read -r url filename <<< "$attachment"
     [ -n "$url" ] || continue
-    filename="$(basename "${url%%\?*}")"
+
+    # Prefer the attachment name returned by the API, unless it is Feishu's generic placeholder like 文件1.
+    filename="${filename:-}"
+    if [[ "$filename" =~ ^文件[0-9]+$ ]]; then
+        filename=""
+    fi
+    if [ -z "$filename" ] || [[ "$filename" == */* ]]; then
+        filename="$(basename "${url%%\?*}")"
+    fi
     if [ -z "$filename" ] || [[ "$filename" == */* ]] || [[ "$filename" == issue ]]; then
         filename=$(resolve_filename_from_headers "$url" "${filename:-附件}")
     fi
