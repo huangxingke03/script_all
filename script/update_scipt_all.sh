@@ -457,7 +457,7 @@ if [ -f "${COMMON_TOOL_DIR}/virt_manager.desktop" ]; then
 fi
 
 echo "===== 更新统一入口与下载别名 ====="
-rm -f   "${TARGET_DIR}/update_scipt_all"   "${TARGET_DIR}/updateSciptAll"   "${TARGET_DIR}/updatesciptAll"   "${TARGET_DIR}/updateSciptall"   "${TARGET_DIR}/updatesciptall"   "${TARGET_DIR}/update_all"   "${TARGET_DIR}/updateAll"   "${TARGET_DIR}/update_download_jira"   "${TARGET_DIR}/updateDownloadJira"   "${TARGET_DIR}/updatedownloadJira"   "${TARGET_DIR}/updateDownloadjira"   "${TARGET_DIR}/updatedownloadjira"   "${TARGET_DIR}/update_download_feishu"   "${TARGET_DIR}/updateDownloadFeishu"   "${TARGET_DIR}/updatedownloadFeishu"   "${TARGET_DIR}/updateDownloadfeishu"   "${TARGET_DIR}/updatedownloadfeishu"   "${TARGET_DIR}/download_jira"   "${TARGET_DIR}/downloadJira"   "${TARGET_DIR}/downloadjira"   "${TARGET_DIR}/download_jira_filtered"   "${TARGET_DIR}/downloadJiraFiltered"   "${TARGET_DIR}/downloadjiraFiltered"   "${TARGET_DIR}/downloadJirafiltered"   "${TARGET_DIR}/downloadjirafiltered"   "${TARGET_DIR}/download_feishu"   "${TARGET_DIR}/downloadFeishu"   "${TARGET_DIR}/downloadfeishu"   "${TARGET_DIR}/download_bug_feishu"   "${TARGET_DIR}/downloadb"
+rm -f   "${TARGET_DIR}/update_scipt_all"   "${TARGET_DIR}/updateSciptAll"   "${TARGET_DIR}/updatesciptAll"   "${TARGET_DIR}/updateSciptall"   "${TARGET_DIR}/updatesciptall"   "${TARGET_DIR}/update_all"   "${TARGET_DIR}/updateAll"   "${TARGET_DIR}/update_download_jira"   "${TARGET_DIR}/updateDownloadJira"   "${TARGET_DIR}/updatedownloadJira"   "${TARGET_DIR}/updateDownloadjira"   "${TARGET_DIR}/updatedownloadjira"   "${TARGET_DIR}/update_download_feishu"   "${TARGET_DIR}/updateDownloadFeishu"   "${TARGET_DIR}/updatedownloadFeishu"   "${TARGET_DIR}/updateDownloadfeishu"   "${TARGET_DIR}/updatedownloadfeishu"   "${TARGET_DIR}/download_jira"   "${TARGET_DIR}/downloadJira"   "${TARGET_DIR}/downloadjira"   "${TARGET_DIR}/download_jira_filtered"   "${TARGET_DIR}/downloadJiraFiltered"   "${TARGET_DIR}/downloadjiraFiltered"   "${TARGET_DIR}/downloadJirafiltered"   "${TARGET_DIR}/downloadjirafiltered"   "${TARGET_DIR}/download_feishu"   "${TARGET_DIR}/downloadFeishu"   "${TARGET_DIR}/downloadfeishu"   "${TARGET_DIR}/download_bug_feishu"   "${TARGET_DIR}/downloadb"   "${TARGET_DIR}/download_feishu_fliter"   "${TARGET_DIR}/downloadFeishuFliter"   "${TARGET_DIR}/downloadfeishuFliter"   "${TARGET_DIR}/downloadFeishufliter"   "${TARGET_DIR}/downloadfeishufliter"
 
 install_script "${ROOT_DIR}/update_scipt_all.sh" "${TARGET_DIR}/updateSciptAll"
 ln -sf "${TARGET_DIR}/updateSciptAll" "${TARGET_DIR}/updatesciptAll"
@@ -496,6 +496,13 @@ ln -sf "${TARGET_DIR}/downloadFeishu" "${TARGET_DIR}/download_bug_feishu"
 ln -sf "${TARGET_DIR}/downloadFeishu" "${TARGET_DIR}/download_feishu"
 ln -sf "${TARGET_DIR}/downloadFeishu" "${TARGET_DIR}/downloadb"
 echo "更新--- ${TARGET_DIR}/downloadFeishu 成功----"
+
+install_script "${FEISHU_DIR}/download_feishu_fliter.sh" "${TARGET_DIR}/downloadFeishuFliter"
+ln -sf "${TARGET_DIR}/downloadFeishuFliter" "${TARGET_DIR}/downloadfeishuFliter"
+ln -sf "${TARGET_DIR}/downloadFeishuFliter" "${TARGET_DIR}/downloadFeishufliter"
+ln -sf "${TARGET_DIR}/downloadFeishuFliter" "${TARGET_DIR}/downloadfeishufliter"
+ln -sf "${TARGET_DIR}/downloadFeishuFliter" "${TARGET_DIR}/download_feishu_fliter"
+echo "更新--- ${TARGET_DIR}/downloadFeishuFliter 成功----"
 
 ensure_case_insensitive_completion
 remove_legacy_completion_sources

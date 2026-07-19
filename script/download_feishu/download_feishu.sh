@@ -12,6 +12,7 @@ ISSUE_ID="${1:-7043211990}"
 ISSUE_URL="https://project.feishu.cn/sb69eb/issue/detail/${ISSUE_ID}"
 ISSUE_API_URL="https://project.feishu.cn/goapi/v2/projects/${PROJECT_KEY}/work_item/${WORK_ITEM_TYPE}/${ISSUE_ID}?"
 SAVE_DIR="/home/huangxingke/下载/${ISSUE_ID}"
+FEISHU_FILTER_SKIP_SPECIAL="${FEISHU_FILTER_SKIP_SPECIAL:-0}"
 
 if [ -z "$ISSUE_ID" ]; then
     echo "用法: downloadFeishu <飞书Issue ID>"
@@ -858,6 +859,22 @@ download_attachment() {
     fi
 }
 
+should_skip_filtered_attachment() {
+    local filename="$1"
+    local lower_name="${filename,,}"
+
+    [ "${FEISHU_FILTER_SKIP_SPECIAL}" = "1" ] || return 1
+
+    case "$lower_name" in
+        can_*.asc|mcu_*.zip|qnx_*.zip)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 is_supported_archive() {
     local lower_name="${1,,}"
     case "$lower_name" in
@@ -1120,6 +1137,11 @@ print(unquote(sys.argv[1]))
 PYNAME
 )
     filepath="${SAVE_DIR}/${filename}"
+
+    if should_skip_filtered_attachment "$filename"; then
+        echo "跳过过滤附件: $filename"
+        continue
+    fi
 
     echo "下载: $filename"
     if download_attachment "$url" "$filepath" "$filename" && [ -s "$filepath" ]; then
