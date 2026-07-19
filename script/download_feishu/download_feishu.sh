@@ -436,7 +436,23 @@ extract_issue_project_debug_snippets() {
 
 extract_issue_title() {
     local issue_json="$1"
-    printf '%s' "$issue_json" | jq -r '.data.name // .data.title // empty' 2>/dev/null | head -n 1
+    printf '%s' "$issue_json" | jq -r '.data.name // .data.title // .data.summary // empty' 2>/dev/null | head -n 1
+}
+
+detect_project_name_from_text() {
+    local source_text="$1"
+    local upper_text
+
+    upper_text=$(printf '%s' "$source_text" | tr '[:lower:]' '[:upper:]')
+
+    # Match standalone platform tags and variants such as CHY_KP31 or CHERY_KP31_BUG.
+    if [[ "$upper_text" =~ (^|[^A-Z0-9])(KP31_INT|KP31|D01)([^A-Z0-9]|$) ]]; then
+        printf '%s
+' "${BASH_REMATCH[2]}"
+        return 0
+    fi
+
+    return 1
 }
 
 extract_issue_software_version() {
@@ -538,12 +554,21 @@ extract_issue_text_fallback() {
             .data.description?,
             .data.tags?,
             .data.labels?,
+            .data.field_value_map?,
+            .data.fields?,
+            .data.custom_fields?,
+            .data.custom_field_values?,
             .data.field_value_map?.jira_Software_Version?,
             .data.field_value_map?.jira_MCU_Version?,
             .. | objects | .title?,
             .. | objects | .label?,
             .. | objects | .tags?,
-            .. | objects | .labels?
+            .. | objects | .labels?,
+            .. | objects | .field_name?,
+            .. | objects | .display_name?,
+            .. | objects | .display_value?,
+            .. | objects | .value?,
+            .. | objects | .text?
         ]
         | map(flatten_text)
         | map(select(length > 0))
@@ -576,12 +601,22 @@ infer_issue_project_name() {
 ' "${BASH_REMATCH[1]}"
         return 0
     fi
+    if project_name=$(detect_project_name_from_text "$title_text"); then
+        printf '%s
+' "$project_name"
+        return 0
+    fi
 
     fallback_text=$(extract_issue_text_fallback "$issue_json")
     upper_text=$(printf '%s' "$fallback_text" | tr '[:lower:]' '[:upper:]')
     if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01)[\]】] ]]; then
         printf '%s
 ' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+    if project_name=$(detect_project_name_from_text "$fallback_text"); then
+        printf '%s
+' "$project_name"
         return 0
     fi
 
@@ -926,16 +961,23 @@ extract_one_archive() {
 }
 
 extract_archives_recursively() {
-    local archive lower_name processed_in_pass
+    local archive_path archive rel_path lower_name processed_in_pass
+    # Track relative paths we have already extracted so newly-created files can be
+    # picked up in the next pass without repeatedly reprocessing the same archive.
     declare -gA extracted_archives_seen=()
 
     while :; do
         processed_in_pass=0
-        for archive in *; do
-            [ -f "$archive" ] || continue
-            is_supported_archive "$archive" || continue
+        # Walk the whole download tree because Feishu attachments often contain
+        # nested archives that only appear after the first extraction pass.
+        while IFS= read -r -d '' archive_path; do
+            [ -f "$archive_path" ] || continue
 
-            lower_name="${archive,,}"
+            rel_path="${archive_path#./}"
+            [ -n "$rel_path" ] || rel_path="$(basename "$archive_path")"
+            is_supported_archive "$rel_path" || continue
+
+            lower_name="${rel_path,,}"
             case "$lower_name" in
                 *.z[0-9][0-9]|*.r[0-9][0-9])
                     continue
@@ -948,11 +990,18 @@ extract_archives_recursively() {
                 continue
             fi
 
-            [[ -n "${extracted_archives_seen[$archive]}" ]] && continue
-            extracted_archives_seen["$archive"]=1
-            extract_one_archive "$archive"
+            [[ -n "${extracted_archives_seen[$rel_path]}" ]] && continue
+            extracted_archives_seen["$rel_path"]=1
+
+            archive="$(basename "$archive_path")"
+            # Extract in the archive's own directory so companion volumes and
+            # relative output paths behave the same as manual extraction.
+            (
+                cd "$(dirname "$archive_path")" || exit 1
+                extract_one_archive "$archive"
+            )
             processed_in_pass=1
-        done
+        done < <(find . -type f \( -iname "*.zip" -o -iname "*.tar.gz" -o -iname "*.tgz" -o -iname "*.7z" -o -iname "*.001" -o -iname "*.rar" \) -print0)
 
         [ "$processed_in_pass" -eq 1 ] || break
     done
