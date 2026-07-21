@@ -440,6 +440,53 @@ extract_issue_title() {
     printf '%s' "$issue_json" | jq -r '.data.name // .data.title // .data.summary // empty' 2>/dev/null | head -n 1
 }
 
+extract_issue_defect_type() {
+    local issue_json="$1"
+
+    printf '%s' "$issue_json" | jq -r '
+        def scalar_text:
+            if type == "string" then .
+            elif type == "number" or type == "boolean" then tostring
+            else empty
+            end;
+        def first_scalar:
+            if type == "array" then
+                map(
+                    if type == "object" then
+                        (.name // .label // .value // .text // .display_value // .display_name // empty) | scalar_text
+                    else
+                        scalar_text
+                    end
+                ) | map(select(length > 0)) | .[0] // empty
+            elif type == "object" then
+                (.name // .label // .value // .text // .display_value // .display_name // empty) | scalar_text
+            else
+                scalar_text
+            end;
+        def defect_type_match:
+            ((.field_name? // .display_name? // .label? // .title? // empty) | tostring) == "缺陷类型";
+        def defect_value:
+            (
+                .field_value?
+                // .value?
+                // .values?
+                // .text?
+                // .name?
+                // .display_value?
+                // .display_name?
+                // empty
+            );
+
+        [
+            .. | objects | select(defect_type_match) | defect_value,
+            .. | objects | .items[]? | select(defect_type_match) | defect_value
+        ]
+        | map(first_scalar)
+        | map(select(type == "string" and length > 0 and . != "null"))
+        | .[0] // empty
+    ' 2>/dev/null | head -n 1
+}
+
 detect_project_name_from_text() {
     local source_text="$1"
     local upper_text
@@ -481,17 +528,26 @@ extract_issue_software_version() {
             end;
 
         [
+            .data.jira_Software_Version?,
+            .data.jira_customfield_11003_8_5?,
+            .data.jira_customfield_12606_8_5?,
+            .data.for_leopard.jira_customfield_12606_8_5?,
             .. | objects | .jira_Software_Version?,
             .. | objects | .jira_customfield_11003_8_5?,
+            .. | objects | .jira_customfield_12606_8_5?,
             .. | objects | .field_value_map?.jira_Software_Version?,
             .. | objects | .field_value_map?.jira_customfield_11003_8_5?,
+            .. | objects | .field_value_map?.jira_customfield_12606_8_5?,
             .. | objects | .fields?.jira_Software_Version?,
             .. | objects | .fields?.jira_customfield_11003_8_5?,
+            .. | objects | .fields?.jira_customfield_12606_8_5?,
             .. | objects | .custom_fields?.jira_Software_Version?,
             .. | objects | .custom_fields?.jira_customfield_11003_8_5?,
+            .. | objects | .custom_fields?.jira_customfield_12606_8_5?,
             .. | objects | .custom_field_values?.jira_Software_Version?,
             .. | objects | .custom_field_values?.jira_customfield_11003_8_5?,
-            .. | objects | select((.field_key? // .key? // .api_name? // .name? // .id? // empty) == "jira_Software_Version")
+            .. | objects | .custom_field_values?.jira_customfield_12606_8_5?,
+            .. | objects | select((.field_key? // .key? // .api_name? // .name? // .id? // empty) == "jira_Software_Version" or (.field_key? // .key? // .api_name? // .name? // .id? // empty) == "jira_customfield_12606_8_5")
               | (.field_value? // .value? // .values? // .text? // .name? // .display_value? // .display_name?),
             .. | objects | .doc_text?,
             .. | objects | .doc_html?
@@ -511,11 +567,13 @@ extract_project_name_from_version() {
         prefix="${BASH_REMATCH[1]}"
         case "$prefix" in
             KP31|D01)
-                printf '%s\n' "$prefix"
+                printf '%s
+' "$prefix"
                 return 0
                 ;;
             KP31INT)
-                printf 'KP31_INT\n'
+                printf 'KP31_INT
+'
                 return 0
                 ;;
         esac
@@ -523,6 +581,34 @@ extract_project_name_from_version() {
     return 1
 }
 
+
+normalize_project_name() {
+    local project_name="$1"
+    local upper_name
+
+    upper_name=$(printf '%s' "$project_name" | tr '[:lower:]' '[:upper:]')
+
+    case "$upper_name" in
+        *KP31INT*)
+            printf 'KP31_INT
+'
+            return 0
+            ;;
+        *KP31*)
+            printf 'KP31
+'
+            return 0
+            ;;
+        *D01*)
+            printf 'D01
+'
+            return 0
+            ;;
+    esac
+
+    printf '%s
+' "$project_name"
+}
 
 extract_issue_text_fallback() {
     local issue_json="$1"
@@ -579,10 +665,11 @@ extract_issue_text_fallback() {
 
 infer_issue_project_name() {
     local issue_json="$1"
-    local project_name title_text fallback_text upper_text software_version
+    local project_name title_text fallback_text upper_text software_version defect_type
 
     project_name=$(extract_issue_project_name "$issue_json")
     if [ -n "$project_name" ]; then
+        project_name=$(normalize_project_name "$project_name")
         printf '%s
 ' "$project_name"
         return 0
@@ -590,6 +677,7 @@ infer_issue_project_name() {
 
     software_version=$(extract_issue_software_version "$issue_json")
     if project_name=$(extract_project_name_from_version "$software_version"); then
+        project_name=$(normalize_project_name "$project_name")
         printf '%s
 ' "$project_name"
         return 0
@@ -598,11 +686,13 @@ infer_issue_project_name() {
     title_text=$(extract_issue_title "$issue_json")
     upper_text=$(printf '%s' "$title_text" | tr '[:lower:]' '[:upper:]')
     if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01)[\]】] ]]; then
+        project_name=$(normalize_project_name "${BASH_REMATCH[1]}")
         printf '%s
-' "${BASH_REMATCH[1]}"
+' "$project_name"
         return 0
     fi
     if project_name=$(detect_project_name_from_text "$title_text"); then
+        project_name=$(normalize_project_name "$project_name")
         printf '%s
 ' "$project_name"
         return 0
@@ -611,11 +701,13 @@ infer_issue_project_name() {
     fallback_text=$(extract_issue_text_fallback "$issue_json")
     upper_text=$(printf '%s' "$fallback_text" | tr '[:lower:]' '[:upper:]')
     if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01)[\]】] ]]; then
+        project_name=$(normalize_project_name "${BASH_REMATCH[1]}")
         printf '%s
-' "${BASH_REMATCH[1]}"
+' "$project_name"
         return 0
     fi
     if project_name=$(detect_project_name_from_text "$fallback_text"); then
+        project_name=$(normalize_project_name "$project_name")
         printf '%s
 ' "$project_name"
         return 0
@@ -623,11 +715,22 @@ infer_issue_project_name() {
 
     for candidate in KP31_INT KP31 D01; do
         if [[ "$upper_text" == *"$candidate"* ]]; then
+            project_name=$(normalize_project_name "$candidate")
             printf '%s
-' "$candidate"
+' "$project_name"
             return 0
         fi
     done
+
+    defect_type=$(extract_issue_defect_type "$issue_json")
+    if [ -n "$defect_type" ]; then
+        project_name=$(normalize_project_name "$defect_type")
+        if [ "$project_name" != "$defect_type" ] || detect_project_name_from_text "$defect_type" >/dev/null; then
+            printf '%s
+' "$project_name"
+            return 0
+        fi
+    fi
 
     return 1
 }
@@ -1024,6 +1127,18 @@ extract_archives_recursively() {
     done
 }
 
+fix_logcat_permissions() {
+    local dir found=0
+
+    while IFS= read -r -d '' dir; do
+        chmod -R 755 "$dir"
+        echo "🔧 已修正 logcat 目录权限: ${dir#./} -> 755"
+        found=1
+    done < <(find . -type d -name 'logcat' -print0)
+
+    [ "$found" -eq 1 ] || return 0
+}
+
 prepare_save_dir() {
     local save_parent save_name existing_path
 
@@ -1055,6 +1170,13 @@ fi
 
 ISSUE_PROJECT_NAME=$(infer_issue_project_name "$ISSUE_JSON")
 ISSUE_PROJECT_DEBUG=$(extract_issue_project_debug_snippets "$ISSUE_JSON")
+if [ -z "$ISSUE_PROJECT_NAME" ]; then
+    # Some issue payloads expose the software version only on the detail body.
+    issue_version_fallback=$(printf '%s' "$ISSUE_JSON" | jq -r '.data.jira_customfield_12606_8_5 // .data.for_leopard.jira_customfield_12606_8_5 // empty' 2>/dev/null | head -n 1)
+    if project_name=$(extract_project_name_from_version "$issue_version_fallback"); then
+        ISSUE_PROJECT_NAME=$project_name
+    fi
+fi
 SAVE_DIR=$(build_save_dir "$ISSUE_ID" "$ISSUE_PROJECT_NAME")
 DETAIL_JSON_FILE=$(mktemp)
 printf '%s' "$ISSUE_JSON" > "$DETAIL_JSON_FILE"
@@ -1085,6 +1207,13 @@ if [ -n "$EXPORTED_REQUEST_JSON_URL" ] && [ "$EXPORTED_REQUEST_JSON_URL" != "$IS
         EXPORTED_REQUEST_JSON_FILE=$(mktemp)
         printf '%s' "$EXPORTED_REQUEST_JSON" > "$EXPORTED_REQUEST_JSON_FILE"
         TEMP_JSON_FILES+=("$EXPORTED_REQUEST_JSON_FILE")
+
+        # Keep the original naming flow; only fall back to the exported detail/log payload when the work-item API has no project hint.
+        if [ -z "$ISSUE_PROJECT_NAME" ]; then
+            ISSUE_PROJECT_NAME=$(infer_issue_project_name "$EXPORTED_REQUEST_JSON")
+            ISSUE_PROJECT_DEBUG=$(extract_issue_project_debug_snippets "$EXPORTED_REQUEST_JSON")
+            SAVE_DIR=$(build_save_dir "$ISSUE_ID" "$ISSUE_PROJECT_NAME")
+        fi
     fi
 fi
 
@@ -1161,11 +1290,7 @@ done
 cd "$SAVE_DIR" || exit 1
 shopt -s nullglob nocaseglob
 extract_archives_recursively
-
-if [ -d "logcat" ]; then
-    chmod -R 755 "logcat"
-    echo "🔧 已修正 logcat 目录权限: 755"
-fi
+fix_logcat_permissions
 
 shopt -u nullglob nocaseglob
 cd - >/dev/null || exit 1
