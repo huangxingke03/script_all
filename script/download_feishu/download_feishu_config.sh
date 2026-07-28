@@ -15,11 +15,12 @@
 #   `FEISHU_ATTACHMENT_JIRA_COOKIE` manually as a fallback.
 #
 # Browser-exported request used for extracting Feishu cookie / referer / user-agent.
-FEISHU_CURL_EXPORT_FILE="/home/huangxingke/project/Python/script/download_feishu/download_feishu_request.curl"
+CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FEISHU_CURL_EXPORT_FILE="${CONFIG_DIR}/download_feishu_request.curl"
 
 # Browser-exported JIRA request used only when Feishu returns Jira-history attachment URLs.
 # The downloader extracts the Cookie value from this cURL at runtime.
-FEISHU_ATTACHMENT_JIRA_CURL_EXPORT_FILE="/home/huangxingke/project/Python/script/download_jira/download_jira_request.curl"
+FEISHU_ATTACHMENT_JIRA_CURL_EXPORT_FILE="${CONFIG_DIR}/download_jira_request.curl"
 
 # Direct Feishu cookie fallback. Use the full Cookie header value only, without the `Cookie:` prefix.
 # Example:

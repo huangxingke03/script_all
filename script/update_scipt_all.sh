@@ -58,7 +58,7 @@ remove = {
     '[ -f /home/huangxingke/project/Python/script/pull_logcat_by_adb_completion.sh ] && source /home/huangxingke/project/Python/script/pull_logcat_by_adb_completion.sh',
     '[ -f /home/huangxingke/project/Python/script/clear_logcat_by_adb_completion.sh ] && source /home/huangxingke/project/Python/script/clear_logcat_by_adb_completion.sh',
     '[ -f /home/huangxingke/project/Python/script/scrcpy_completion.sh ] && source /home/huangxingke/project/Python/script/scrcpy_completion.sh',
-    '[ -f /home/huangxingke/project/Python/script/sound_bt_click_completion.sh ] && source /home/huangxingke/project/Python/script/sound_bt_click_completion.sh',
+    '[ -f /home/huangxingke/project/Python/script/voice_bt_click_completion.sh ] && source /home/huangxingke/project/Python/script/voice_bt_click_completion.sh',
     '[ -f /home/huangxingke/project/Python/script/iflytek_sys_completion.sh ] && source /home/huangxingke/project/Python/script/iflytek_sys_completion.sh',
     '[ -f /home/huangxingke/project/Python/script/voice_assistant_completion.sh ] && source /home/huangxingke/project/Python/script/voice_assistant_completion.sh',
     '[ -f "/home/huangxingke/project/Python/script/voice_build/voice_assistant_completion.sh" ] && source "/home/huangxingke/project/Python/script/voice_build/voice_assistant_completion.sh"',
@@ -67,7 +67,7 @@ remove = {
     '[ -f /home/huangxingke/project/Python/script/logcat_sum/pull_logcat_by_adb_completion.sh ] && source /home/huangxingke/project/Python/script/logcat_sum/pull_logcat_by_adb_completion.sh',
     '[ -f /home/huangxingke/project/Python/script/logcat_sum/clear_logcat_by_adb_completion.sh ] && source /home/huangxingke/project/Python/script/logcat_sum/clear_logcat_by_adb_completion.sh',
     '[ -f /home/huangxingke/project/Python/script/common_script/scrcpy_completion.sh ] && source /home/huangxingke/project/Python/script/common_script/scrcpy_completion.sh',
-    '[ -f /home/huangxingke/project/Python/script/common_script/sound_bt_click_completion.sh ] && source /home/huangxingke/project/Python/script/common_script/sound_bt_click_completion.sh',
+    '[ -f /home/huangxingke/project/Python/script/common_script/voice_bt_click_completion.sh ] && source /home/huangxingke/project/Python/script/common_script/voice_bt_click_completion.sh',
     '[ -f /home/huangxingke/project/Python/script/update_iflytek/iflytek_sys_completion.sh ] && source /home/huangxingke/project/Python/script/update_iflytek/iflytek_sys_completion.sh',
     '[ -f /home/huangxingke/project/Python/script/rename_usb_dir_completion.sh ] && source /home/huangxingke/project/Python/script/rename_usb_dir_completion.sh',
     '[ -f /home/huangxingke/project/Python/script/common_script/rename_usb_dir_completion.sh ] && source /home/huangxingke/project/Python/script/common_script/rename_usb_dir_completion.sh',
@@ -344,10 +344,10 @@ rm -f \
   "${TARGET_DIR}/ksUI" \
   "${TARGET_DIR}/ksuI" \
   "${TARGET_DIR}/kSuI" \
-  "${TARGET_DIR}/soundBtClick" \
-  "${TARGET_DIR}/soundbtClick" \
-  "${TARGET_DIR}/soundBtclick" \
-  "${TARGET_DIR}/soundbtclick" \
+  "${TARGET_DIR}/voiceBtClick" \
+  "${TARGET_DIR}/voicebtClick" \
+  "${TARGET_DIR}/voiceBtclick" \
+  "${TARGET_DIR}/voicebtclick" \
   "${TARGET_DIR}/update_rename_usb_dir" \
   "${TARGET_DIR}/updateRenameUsbDir" \
   "${TARGET_DIR}/updaterenameUsbDir" \
@@ -414,11 +414,16 @@ ln -sf "${TARGET_DIR}/killSystemui" "${TARGET_DIR}/ksuI"
 ln -sf "${TARGET_DIR}/killSystemui" "${TARGET_DIR}/kSuI"
 echo "更新--- ${TARGET_DIR}/killSystemui 成功----"
 
-install_script "${COMMON_TOOL_DIR}/sound_bt_click.sh" "${TARGET_DIR}/soundBtClick"
-ln -sf "${TARGET_DIR}/soundBtClick" "${TARGET_DIR}/soundbtClick"
-ln -sf "${TARGET_DIR}/soundBtClick" "${TARGET_DIR}/soundBtclick"
-ln -sf "${TARGET_DIR}/soundBtClick" "${TARGET_DIR}/soundbtclick"
-echo "更新--- ${TARGET_DIR}/soundBtClick 成功----"
+install_script "${COMMON_TOOL_DIR}/voice_bt_click.sh" "${TARGET_DIR}/voiceBtClick"
+ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/voicebtClick"
+ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/voiceBtclick"
+ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/voicebtclick"
+ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/voice_bt_click"
+ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/soundBtClick"
+ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/soundbtClick"
+ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/soundBtclick"
+ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/soundbtclick"
+echo "更新--- ${TARGET_DIR}/voiceBtClick 成功----"
 
 install_script "${COMMON_TOOL_DIR}/rename_usb_dir.sh" "${TARGET_DIR}/renameUsbDir"
 ln -sf "${TARGET_DIR}/renameUsbDir" "${TARGET_DIR}/renameusbDir"
@@ -502,11 +507,14 @@ ln -sf "${TARGET_DIR}/downloadFeishuFliter" "${TARGET_DIR}/downloadfeishuFliter"
 ln -sf "${TARGET_DIR}/downloadFeishuFliter" "${TARGET_DIR}/downloadFeishufliter"
 ln -sf "${TARGET_DIR}/downloadFeishuFliter" "${TARGET_DIR}/downloadfeishufliter"
 ln -sf "${TARGET_DIR}/downloadFeishuFliter" "${TARGET_DIR}/download_feishu_fliter"
+ln -sf "${TARGET_DIR}/downloadFeishuFliter" "${TARGET_DIR}/downloadfeishu_fliter"
 echo "更新--- ${TARGET_DIR}/downloadFeishuFliter 成功----"
+echo "更新--- ${TARGET_DIR}/downloadfeishufliter 成功----"
 
 ensure_case_insensitive_completion
 remove_legacy_completion_sources
 ensure_shell_hooks_source
 
 echo "===== 更新完成 ====="
+echo "提示: Feishu 下载入口已支持按单号优先匹配专用 cURL，并自动回退到其他项目 cURL。"
 echo "提示: 当前 shell 如果还命中旧路径，可执行 hash -r 或重新开一个终端。"

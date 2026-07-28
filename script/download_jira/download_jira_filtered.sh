@@ -12,7 +12,7 @@ fi
 # =============================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-JIRA_CURL_EXPORT_FILE="${JIRA_CURL_EXPORT_FILE:-/home/huangxingke/project/Python/script/download_jira/download_jira_request.curl}"
+JIRA_CURL_EXPORT_FILE="${JIRA_CURL_EXPORT_FILE:-${SCRIPT_DIR}/download_jira_request.curl}"
 
 extract_curl_field() {
     local curl_file="$1"
@@ -394,11 +394,39 @@ is_supported_archive() {
 extract_one_archive() {
     local f="$1"
     local lower_name="${f,,}"
-    local archive_dir archive_name base companions has_companion=false vol_count
+    local archive_dir archive_name archive_stem extract_target_dir base companions has_companion=false vol_count
 
     archive_dir="$(dirname "$f")"
     archive_name="$(basename "$f")"
     [ "$archive_dir" = "." ] && archive_dir="$SAVE_DIR"
+
+    archive_stem="$archive_name"
+    case "$lower_name" in
+        *.tar.gz)
+            archive_stem="${archive_name%.tar.gz}"
+            ;;
+        *.tgz)
+            archive_stem="${archive_name%.tgz}"
+            ;;
+        *.part1.rar)
+            archive_stem="${archive_name%.part1.rar}"
+            ;;
+        *.rar)
+            archive_stem="${archive_name%.rar}"
+            ;;
+        *.zip)
+            archive_stem="${archive_name%.zip}"
+            ;;
+        *.7z)
+            archive_stem="${archive_name%.7z}"
+            ;;
+        *.001)
+            archive_stem="${archive_name%.001}"
+            ;;
+    esac
+
+    extract_target_dir="${archive_dir}/${archive_stem}"
+    mkdir -p "$extract_target_dir"
 
     case "$lower_name" in
         *.zip)
@@ -409,69 +437,74 @@ extract_one_archive() {
             done
             if $has_companion; then
                 vol_count=$(ls "${base}".z[0-9][0-9] "${base}".Z[0-9][0-9] 2>/dev/null | wc -l)
-                echo "📦 解压 ZIP 分卷: $f（共 $((vol_count + 1)) 个分卷）"
+                echo "📦 解压 ZIP 分卷: $f -> $extract_target_dir（共 $((vol_count + 1)) 个分卷）"
                 (
                     cd "$archive_dir" &&
-                    7z x -y -aoa "$archive_name"
-                ) >/dev/null 2>&1                     && echo "   ✅ ZIP 分卷解压完成"                     || {
-                        echo "   ❌ ZIP 分卷解压失败："
-                        (
-                            cd "$archive_dir" &&
-                            7z x -y -aoa "$archive_name"
-                        ) 2>&1 | tail -n 20
-                        printf '   💡 手动：cd "%s" && 7z x "%s"\n' "$archive_dir" "$archive_name"
-                    }
+                    7z x -y -aoa "-o$extract_target_dir" "$archive_name"
+                ) >/dev/null 2>&1 && echo "   ✅ ZIP 分卷解压完成" || {
+                    echo "   ❌ ZIP 分卷解压失败："
+                    (
+                        cd "$archive_dir" &&
+                        7z x -y -aoa "-o$extract_target_dir" "$archive_name"
+                    ) 2>&1 | tail -n 20
+                    printf '   💡 手动：cd "%s" && 7z x -o"%s" "%s"
+' "$archive_dir" "$extract_target_dir" "$archive_name"
+                }
             else
-                echo "📦 解压 ZIP: $f"
-                unzip -o "$f" -d "$archive_dir" >/dev/null 2>&1                     && echo "   ✅ ZIP 解压完成"                     || { echo "   ❌ ZIP 解压失败"; printf '   💡 手动：cd "%s" && unzip "%s"\n' "$archive_dir" "$archive_name"; }
+                echo "📦 解压 ZIP: $f -> $extract_target_dir"
+                unzip -o "$f" -d "$extract_target_dir" >/dev/null 2>&1 && echo "   ✅ ZIP 解压完成" || { echo "   ❌ ZIP 解压失败"; printf '   💡 手动：cd "%s" && unzip "%s" -d "%s"
+' "$archive_dir" "$archive_name" "$extract_target_dir"; }
             fi
             ;;
         *.tar.gz|*.tgz)
-            echo "📦 解压 TAR.GZ: $f"
-            tar -xzf "$f" -C "$archive_dir"                 && echo "   ✅ TAR.GZ 解压完成"                 || { echo "   ❌ TAR.GZ 解压失败"; printf '   💡 手动：cd "%s" && tar -xzf "%s"\n' "$archive_dir" "$archive_name"; }
+            echo "📦 解压 TAR.GZ: $f -> $extract_target_dir"
+            tar -xzf "$f" -C "$extract_target_dir" && echo "   ✅ TAR.GZ 解压完成" || { echo "   ❌ TAR.GZ 解压失败"; printf '   💡 手动：cd "%s" && tar -xzf "%s" -C "%s"
+' "$archive_dir" "$archive_name" "$extract_target_dir"; }
             ;;
         *.001)
             base="${f%.*}"
             vol_count=$(ls "${base}".[0-9][0-9][0-9] 2>/dev/null | wc -l)
-            echo "📦 解压 7z 分卷: $f（共 $vol_count 个分卷）"
+            echo "📦 解压 7z 分卷: $f -> $extract_target_dir（共 $vol_count 个分卷）"
             if (
                 cd "$archive_dir" &&
-                7z x -y -aoa "$archive_name"
+                7z x -y -aoa "-o$extract_target_dir" "$archive_name"
             ) >/dev/null 2>&1; then
                 echo "   ✅ 7z 分卷解压完成"
             elif command -v unar >/dev/null 2>&1 && (
                 cd "$archive_dir" &&
-                unar -force-overwrite "$archive_name"
+                unar -force-overwrite -output-directory "$extract_target_dir" "$archive_name"
             ) >/dev/null 2>&1; then
                 echo "   ✅ unar 解压完成"
             else
                 echo "   ❌ 7z 分卷解压失败："
                 (
                     cd "$archive_dir" &&
-                    7z x -y -aoa "$archive_name"
+                    7z x -y -aoa "-o$extract_target_dir" "$archive_name"
                 ) 2>&1 | tail -n 20
-                printf '   💡 手动：cd "%s" && 7z x "%s"\n' "$archive_dir" "$archive_name"
+                printf '   💡 手动：cd "%s" && 7z x -o"%s" "%s"
+' "$archive_dir" "$extract_target_dir" "$archive_name"
             fi
             ;;
         *.7z)
-            echo "📦 解压 7z: $f"
+            echo "📦 解压 7z: $f -> $extract_target_dir"
             if (
                 cd "$archive_dir" &&
-                7z x -y -aoa "$archive_name"
+                7z x -y -aoa "-o$extract_target_dir" "$archive_name"
             ) >/dev/null 2>&1; then
                 echo "   ✅ 7z 解压完成"
             elif command -v unar >/dev/null 2>&1 && (
                 cd "$archive_dir" &&
-                unar -force-overwrite "$archive_name"
+                unar -force-overwrite -output-directory "$extract_target_dir" "$archive_name"
             ) >/dev/null 2>&1; then
                 echo "   ✅ unar 解压完成"
             else
                 echo "   ❌ 7z 解压失败："
                 (
                     cd "$archive_dir" &&
-                    7z x -y -aoa "$archive_name"
+                    7z x -y -aoa "-o$extract_target_dir" "$archive_name"
                 ) 2>&1 | tail -n 20
-                printf '   💡 手动：cd "%s" && 7z x "%s"\n' "$archive_dir" "$archive_name"
+                printf '   💡 手动：cd "%s" && 7z x -o"%s" "%s"
+' "$archive_dir" "$extract_target_dir" "$archive_name"
             fi
             ;;
         *.part1.rar)
@@ -479,11 +512,12 @@ extract_one_archive() {
                 base="${f%.*}"
                 base="${base%.*}"
                 vol_count=$(ls "${base}".part[0-9]*.rar 2>/dev/null | wc -l)
-                echo "📦 解压 RAR 分卷(新格式): $f（共 $vol_count 个分卷）"
+                echo "📦 解压 RAR 分卷(新格式): $f -> $extract_target_dir（共 $vol_count 个分卷）"
                 (
                     cd "$archive_dir" &&
-                    unrar x -o+ "$archive_name" .
-                ) >/dev/null 2>&1                     && echo "   ✅ RAR 分卷解压完成"                     || { echo "   ❌ RAR 分卷解压失败"; printf '   💡 手动：cd "%s" && unrar x "%s"\n' "$archive_dir" "$archive_name"; }
+                    unrar x -o+ "$archive_name" "$extract_target_dir/"
+                ) >/dev/null 2>&1 && echo "   ✅ RAR 分卷解压完成" || { echo "   ❌ RAR 分卷解压失败"; printf '   💡 手动：cd "%s" && unrar x "%s" "%s/"
+' "$archive_dir" "$archive_name" "$extract_target_dir"; }
             else
                 echo "⚠️ 未安装 unrar，RAR 文件跳过（安装：sudo apt install unrar）"
             fi
@@ -496,14 +530,15 @@ extract_one_archive() {
                 base="${f%.*}"
                 if ls "${base}".r[0-9][0-9] &>/dev/null; then
                     vol_count=$(( $(ls "${base}".r[0-9][0-9] 2>/dev/null | wc -l) + 1 ))
-                    echo "📦 解压 RAR 分卷(旧格式): $f（共 $vol_count 个分卷）"
+                    echo "📦 解压 RAR 分卷(旧格式): $f -> $extract_target_dir（共 $vol_count 个分卷）"
                 else
-                    echo "📦 解压 RAR: $f"
+                    echo "📦 解压 RAR: $f -> $extract_target_dir"
                 fi
                 (
                     cd "$archive_dir" &&
-                    unrar x -o+ "$archive_name" .
-                ) >/dev/null 2>&1                     && echo "   ✅ RAR 解压完成"                     || { echo "   ❌ RAR 解压失败"; printf '   💡 手动：cd "%s" && unrar x "%s"\n' "$archive_dir" "$archive_name"; }
+                    unrar x -o+ "$archive_name" "$extract_target_dir/"
+                ) >/dev/null 2>&1 && echo "   ✅ RAR 解压完成" || { echo "   ❌ RAR 解压失败"; printf '   💡 手动：cd "%s" && unrar x "%s" "%s/"
+' "$archive_dir" "$archive_name" "$extract_target_dir"; }
             else
                 echo "⚠️ 未安装 unrar，RAR 文件跳过（安装：sudo apt install unrar）"
             fi

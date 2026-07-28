@@ -39,9 +39,9 @@ _reload_clear_logcat_by_adb_completion() {
     source "${LOGCAT_DIR}/clear_logcat_by_adb_completion.sh"
 }
 
-_reload_sound_bt_click_completion() {
+_reload_voice_bt_click_completion() {
     # shellcheck disable=SC1091
-    source "${COMMON_TOOL_DIR}/sound_bt_click_completion.sh"
+    source "${COMMON_TOOL_DIR}/voice_bt_click_completion.sh"
 }
 
 _reload_rename_usb_dir_completion() {
@@ -57,7 +57,7 @@ reload_local_completions() {
     _reload_scrcpy_completion
     _reload_pull_logcat_by_adb_completion
     _reload_clear_logcat_by_adb_completion
-    _reload_sound_bt_click_completion
+    _reload_voice_bt_click_completion
     _reload_rename_usb_dir_completion
 }
 
@@ -94,9 +94,9 @@ _refresh_clear_logcat_after_update() {
     _reload_clear_logcat_by_adb_completion
 }
 
-_refresh_sound_bt_click_after_update() {
+_refresh_voice_bt_click_after_update() {
     _run_published_script_update "$@" || return $?
-    _reload_sound_bt_click_completion
+    _reload_voice_bt_click_completion
     _reload_rename_usb_dir_completion
 }
 

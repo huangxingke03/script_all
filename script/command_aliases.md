@@ -67,6 +67,7 @@
 - Variant: `startIflytekpage`
 - Variant: `startiflytekpage`
 - Variant: `start_iflytek_page`
+- 中文说明：用于启动讯飞设置页，支持 `-s` 指定台架设备序列号。
 
 ## Start QNX D01
 - Standard: `startQnxD01`
@@ -98,6 +99,7 @@
 - Shortcut Variant: `ksUI`
 - Shortcut Variant: `ksuI`
 - Shortcut Variant: `kSuI`
+- 中文说明：用于结束 SystemUI 进程，通常需要设备支持 root/su。
 
 ## Reboot Device
 - Standard: `rebootDevice`
@@ -113,6 +115,7 @@
 - Variant: `stoprandomLog`
 - Variant: `stopRandomlog`
 - Variant: `stoprandomlog`
+- 中文说明：用于启动或停止随机日志采集，`stopRandomLog` 会复用同一套采集逻辑。
 
 ## Jira Commands
 - Standard: `downloadJira`
@@ -139,6 +142,7 @@
 - Variant: `download_feishu_fliter`
 - Config: `download_feishu/download_feishu_config.sh`
 - Request Template: `download_feishu/download_feishu_request.curl`
+- Request Routing: `downloadFeishu` / `downloadFeishuFliter` will prefer `download_feishu_request_<issue_id>.curl` first, then the default `download_feishu_request.curl`, then any other matching Feishu cURL exports in the script directory or source script directory
 - Attachment Rule: download every attachment URL returned by Feishu; JIRA-history attachments can use `FEISHU_ATTACHMENT_JIRA_COOKIE`
 - Filter Rule: `downloadFeishuFliter` keeps all `downloadFeishu` logic but skips `can_*.asc`, `mcu_*.zip`, and `qnx_*.zip` attachments before download and extraction
 - Save Dir Rule: keep the original naming order; normalize project text like `CHERY_KP31_Bug` to `KP31`, then prefer detected project prefix such as `KP31_7043211990` or `D01_7043211990`, otherwise fall back to the plain issue ID directory like `7043211990`
@@ -214,11 +218,18 @@
 - Variant: `clearlogcatbyAdb`
 - Variant: `clear_logcat_by_adb`
 
-## Sound Bt Click
-- Standard: `soundBtClick`
-- Variant: `soundbtClick`
-- Variant: `soundBtclick`
-- Variant: `soundbtclick`
+## Voice Bt Click
+- Standard: `voiceBtClick`
+- Variant: `voicebtClick`
+- Variant: `voiceBtclick`
+- Variant: `voicebtclick`
+- Variant: `voice_bt_click`
+- Compatibility Alias: `soundBtClick`
+- Compatibility Alias: `soundbtClick`
+- Compatibility Alias: `soundBtclick`
+- Compatibility Alias: `soundbtclick`
+- 中文说明：这是“语音按键”服务的快捷指令，旧的 `soundBtClick` 族命令仍保留为兼容别名。
+- 中文说明：输入命令名后可直接按 Tab 补全，`-s` 后也会继续提示可用设备。
 
 ## Virt Manager
 - Standard: `virtManager`
@@ -242,14 +253,16 @@
 - `downloadFeishu` now recursively scans the whole download tree for archives, so nested `zip`/`7z`/`rar` files extracted into child directories are processed in later passes too.
 - `downloadFeishu` keeps the original save-dir naming logic: it first uses the existing project-name/version/title detection flow, normalizes project text such as `CHERY_KP31_Bug` to `KP31`, adds `KP31` / `D01` fallback recognition from Feishu text when needed, and if nothing matches still falls back to `/home/huangxingke/下载/<issue_id>`.
 - Log-related implementation and completion files live in `logcat_sum/`; `update_scipt_all.sh` now publishes `startRandomLog`, `stopRandomLog`, `pullLogcatByAdb`, and `clearLogcatByAdb` from there.
+- 中文说明：随机日志命令支持 `-s` 选设备，`stopRandomLog` 直接复用已发布的 `startRandomLog`。
 - Common utility scripts live in `common_script/`; `update_scipt_all.sh` now publishes `startIflytekPage`, `startQnxD01`, `rebootDevice`, `killSystemui`, `renameUsbDir`, and `virtManager` from there, and loads their shared completion logic from the same directory.
+- 中文说明：这些通用命令都以发布到 `~/.local/bin` 的版本为准，不再依赖源码目录下的旧位置。
 - `updateSciptAll` is the only local update implementation in this repo; old `updateAll` and JIRA/Feishu legacy update names are compatibility aliases to the same unified updater.
 - `update_scipt_all.sh` publishes these downloader entry points: `downloadJira`, `downloadJiraFiltered`, `downloadFeishu`, `downloadFeishuFliter`, plus helper files `download_jira_request.curl`, `download_feishu_config.sh`, and `download_feishu_request.curl`.
 - Jira and Feishu downloader aliases are command-name aliases only; they do not need device completion.
 - Random log, `pullLogcatByAdb`, and `clearLogcatByAdb` variants support `-s` device selection and tab completion.
 - Voice command variants and Iflytek update command variants also support `-s` device selection and tab completion. Voice build implementations, shared helpers, completion logic, and VoiceAssistant API jar helper scripts now live in `voice_build/`. `update_scipt_all.sh` now publishes `voiceAssistant*`, `voiceSetting*`, `makeVoiceAssistantApiKp31`, and `makeVoiceAssistantApiD01` from there; Iflytek implementation scripts still live in `update_iflytek/`.
-- `soundBtClick` supports `-s` device selection and tab completion.
-- `soundBtClick` is the canonical implementation for the VoiceCommonService sound-button action.
+- `voiceBtClick` supports `-s` device selection and tab completion. `soundBtClick` variants remain compatibility aliases.
+- `voiceBtClick` is the canonical implementation for the VoiceCommonService voice-button action.
 - Rename USB Dir variants now live in `common_script/`, are published by `update_scipt_all.sh`, and support case-insensitive Tab completion for command names plus current first-level directories under the configured USB mount point.
 - Virt Manager now lives in `common_script/`, is published by `update_scipt_all.sh`, and also installs an application launcher into `~/.local/share/applications`.
 - Legacy underscore-style shortcuts have been removed except where they are still intentionally published as compatibility aliases.
@@ -271,6 +284,7 @@ killsystemui -s <device_serial>
 startRandomlog -s <device_serial>
 pullLogcatByAdb -s <device_serial>
 clearLogcatByAdb -s <device_serial>
+voiceBtClick -s <device_serial>
 soundBtClick -s <device_serial>
 startQnxD01
 clearLogcatByAdb /data/log

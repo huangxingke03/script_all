@@ -28,11 +28,106 @@ fi
 FEISHU_REQUEST_URL_DEFAULT="https://project.feishu.cn/goapi/v2/projects/6a4c8fa0bcd74934733780cc/work_item/issue/7042888694?"
 FEISHU_REFERER_DEFAULT="https://project.feishu.cn/sb69eb/issue/detail/7042888694?parentUrl=%2Fworkbench&openScene=3"
 FEISHU_USER_AGENT_DEFAULT="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
-CURL_EXPORT_FILE="${FEISHU_CURL_EXPORT_FILE:-${SCRIPT_DIR}/download_feishu_request.curl}"
+CURL_EXPORT_FILE="${FEISHU_CURL_EXPORT_FILE:-${SCRIPT_DIR}/download_feishu_request_kp31.curl}"
+ISSUE_SPECIFIC_CURL_EXPORT_FILE="${SCRIPT_DIR}/download_feishu_request_${ISSUE_ID}.curl"
 FEISHU_COOKIE_FALLBACK="${FEISHU_COOKIE:-${COOKIE:-}}"
 FEISHU_REFERER_FALLBACK_VALUE="${FEISHU_REFERER_FALLBACK:-${REFERER:-${FEISHU_REFERER_DEFAULT}}}"
 FEISHU_USER_AGENT_FALLBACK_VALUE="${FEISHU_USER_AGENT_FALLBACK:-${USER_AGENT:-${FEISHU_USER_AGENT_DEFAULT}}}"
 FEISHU_REQUEST_URL_FALLBACK_VALUE="${FEISHU_REQUEST_URL_FALLBACK:-${REQUEST_URL:-${FEISHU_REQUEST_URL_DEFAULT}}}"
+
+FEISHU_AUTO_SELECT_PROJECTS="${FEISHU_AUTO_SELECT_PROJECTS:-1}"
+FEISHU_CURL_FORCE="${FEISHU_CURL_FORCE:-0}"
+FEISHU_SOURCE_SCRIPT_DIR="${FEISHU_SOURCE_SCRIPT_DIR:-$HOME/project/Python/script/download_feishu}"
+
+try_download_with_curl_file() {
+    local curl_file="$1"
+    [ -f "$curl_file" ] || return 1
+    FEISHU_CURL_FORCE=1 FEISHU_AUTO_SELECT_PROJECTS=0 FEISHU_CURL_EXPORT_FILE_OVERRIDE="$curl_file" "$0" "$ISSUE_ID"
+}
+
+if [ "$FEISHU_CURL_FORCE" != "1" ] && [ "$FEISHU_AUTO_SELECT_PROJECTS" = "1" ]; then
+    declare -A candidate_seen=()
+    candidate_files=()
+
+    add_candidate_file() {
+        local candidate="$1"
+        local candidate_key
+        [ -f "$candidate" ] || return 0
+        candidate_key="$(basename "$candidate")"
+        [ -n "${candidate_seen[$candidate_key]:-}" ] && return 0
+        candidate_seen["$candidate_key"]=1
+        candidate_files+=("$candidate")
+    }
+
+    collect_candidates_from_dir() {
+        local base_dir="$1"
+        local specific="$base_dir/download_feishu_request_${ISSUE_ID}.curl"
+        local default="$base_dir/download_feishu_request_kp31.curl"
+        local project_aliases=("$base_dir/download_feishu_request_d01.curl")
+        local curl_file
+
+        [ -d "$base_dir" ] || return 0
+        add_candidate_file "$specific"
+        add_candidate_file "$default"
+        for alias_file in "${project_aliases[@]}"; do
+            add_candidate_file "$alias_file"
+        done
+        while IFS= read -r -d '' curl_file; do
+            case "$curl_file" in
+                "$specific"|"$default"|"${project_aliases[0]}")
+                    continue
+                    ;;
+            esac
+            add_candidate_file "$curl_file"
+        done < <(find "$base_dir" -maxdepth 1 -type f -name 'download_feishu_request_*.curl' -print0 | sort -z)
+    }
+
+    collect_candidates_from_dir "$SCRIPT_DIR"
+    collect_candidates_from_dir "$FEISHU_SOURCE_SCRIPT_DIR"
+
+    if [ "${#candidate_files[@]}" -gt 0 ]; then
+        last_status=1
+        for candidate in "${candidate_files[@]}"; do
+            echo "🔁 尝试 Feishu cURL: $(basename "$candidate")"
+            if try_download_with_curl_file "$candidate"; then
+                exit 0
+            fi
+            last_status=$?
+        done
+        exit "$last_status"
+    fi
+fi
+
+extract_project_key_from_url() {
+    local url="$1"
+
+    python3 - "$url" <<'PYURL'
+import re
+import sys
+
+url = sys.argv[1]
+match = re.search(r'/projects/([^/]+)/work_item/', url)
+if match:
+    print(match.group(1), end='')
+PYURL
+}
+
+extract_issue_id_from_url() {
+    local url="$1"
+
+    python3 - "$url" <<'PYURL'
+import re
+import sys
+
+url = sys.argv[1]
+match = re.search(r'/issue/detail/(\d+)|/work_item/issue/(\d+)|/log/issue/(\d+)|/issue/(\d+)', url)
+if match:
+    for group in match.groups():
+        if group:
+            print(group, end='')
+            break
+PYURL
+}
 
 extract_curl_field() {
     local curl_file="$1"
@@ -98,6 +193,14 @@ FEISHU_X_TOKEN=""
 MG_JIRA_PROJECT_FILE_LIST_URL="https://mg-jira.auto-link.com.cn/api/files/list"
 FEISHU_ATTACHMENT_JIRA_COOKIE_RESOLVED="${FEISHU_ATTACHMENT_JIRA_COOKIE:-}"
 
+if [ -n "${FEISHU_CURL_EXPORT_FILE_OVERRIDE:-}" ] && [ -f "$FEISHU_CURL_EXPORT_FILE_OVERRIDE" ]; then
+    CURL_EXPORT_FILE="$FEISHU_CURL_EXPORT_FILE_OVERRIDE"
+elif [ -n "${FEISHU_CURL_EXPORT_FILE:-}" ] && [ -f "$FEISHU_CURL_EXPORT_FILE" ]; then
+    CURL_EXPORT_FILE="$FEISHU_CURL_EXPORT_FILE"
+elif [ -f "$ISSUE_SPECIFIC_CURL_EXPORT_FILE" ]; then
+    CURL_EXPORT_FILE="$ISSUE_SPECIFIC_CURL_EXPORT_FILE"
+fi
+
 if [ -f "$CURL_EXPORT_FILE" ]; then
     FEISHU_COOKIE=$(extract_curl_field "$CURL_EXPORT_FILE" "cookie")
     FEISHU_REFERER=$(extract_curl_field "$CURL_EXPORT_FILE" "referer")
@@ -121,6 +224,24 @@ if [ -z "$FEISHU_USER_AGENT" ]; then
 fi
 if [ -z "$FEISHU_REQUEST_URL" ]; then
     FEISHU_REQUEST_URL="$FEISHU_REQUEST_URL_FALLBACK_VALUE"
+fi
+
+if [ -n "$FEISHU_REQUEST_URL" ]; then
+    extracted_project_key=$(extract_project_key_from_url "$FEISHU_REQUEST_URL")
+    if [ -n "$extracted_project_key" ]; then
+        PROJECT_KEY="$extracted_project_key"
+    fi
+fi
+
+ISSUE_URL="https://project.feishu.cn/sb69eb/issue/detail/${ISSUE_ID}"
+ISSUE_API_URL="https://project.feishu.cn/goapi/v2/projects/${PROJECT_KEY}/work_item/${WORK_ITEM_TYPE}/${ISSUE_ID}?"
+
+if [ -n "$FEISHU_REQUEST_URL" ] && [[ "$FEISHU_REQUEST_URL" == *"/issue/detail/"* ]]; then
+    ISSUE_URL="$FEISHU_REQUEST_URL"
+fi
+
+if [ -n "$FEISHU_REFERER" ] && [[ "$FEISHU_REFERER" == *"/issue/detail/"* ]]; then
+    ISSUE_URL="$FEISHU_REFERER"
 fi
 
 if [ -z "$FEISHU_COOKIE" ]; then
@@ -993,7 +1114,39 @@ is_supported_archive() {
 extract_one_archive() {
     local f="$1"
     local lower_name="${f,,}"
-    local base companions has_companion=false vol_count
+    local archive_dir archive_name archive_stem extract_target_dir base companions has_companion=false vol_count
+
+    archive_dir="$(dirname "$f")"
+    archive_name="$(basename "$f")"
+    [ "$archive_dir" = "." ] && archive_dir="$SAVE_DIR"
+
+    archive_stem="$archive_name"
+    case "$lower_name" in
+        *.tar.gz)
+            archive_stem="${archive_name%.tar.gz}"
+            ;;
+        *.tgz)
+            archive_stem="${archive_name%.tgz}"
+            ;;
+        *.part1.rar)
+            archive_stem="${archive_name%.part1.rar}"
+            ;;
+        *.rar)
+            archive_stem="${archive_name%.rar}"
+            ;;
+        *.zip)
+            archive_stem="${archive_name%.zip}"
+            ;;
+        *.7z)
+            archive_stem="${archive_name%.7z}"
+            ;;
+        *.001)
+            archive_stem="${archive_name%.001}"
+            ;;
+    esac
+
+    extract_target_dir="${archive_dir}/${archive_stem}"
+    mkdir -p "$extract_target_dir"
 
     case "$lower_name" in
         *.zip)
@@ -1004,45 +1157,63 @@ extract_one_archive() {
             done
             if $has_companion; then
                 vol_count=$(ls "${base}".z[0-9][0-9] "${base}".Z[0-9][0-9] 2>/dev/null | wc -l)
-                echo "解压 ZIP 分卷: $f（共 $((vol_count + 1)) 个分卷）"
-                7z x -y -aoa "$f" >/dev/null 2>&1 \
-                    && echo "   ZIP 分卷解压完成" \
-                    || { echo "   ZIP 分卷解压失败"; 7z x -y -aoa "$f" 2>&1 | tail -n 20; }
+                echo "解压 ZIP 分卷: $f -> $extract_target_dir（共 $((vol_count + 1)) 个分卷）"
+                (
+                    cd "$archive_dir" &&
+                    7z x -y -aoa "-o$extract_target_dir" "$archive_name"
+                ) >/dev/null 2>&1                     && echo "   ZIP 分卷解压完成"                     || { echo "   ZIP 分卷解压失败"; (
+                            cd "$archive_dir" &&
+                            7z x -y -aoa "-o$extract_target_dir" "$archive_name"
+                        ) 2>&1 | tail -n 20; }
             else
-                echo "解压 ZIP: $f"
-                unzip -o "$f" -d . >/dev/null 2>&1 \
-                    && echo "   ZIP 解压完成" \
-                    || echo "   ZIP 解压失败"
+                echo "解压 ZIP: $f -> $extract_target_dir"
+                unzip -o "$f" -d "$extract_target_dir" >/dev/null 2>&1                     && echo "   ZIP 解压完成"                     || echo "   ZIP 解压失败"
             fi
             ;;
         *.tar.gz|*.tgz)
-            echo "解压 TAR.GZ: $f"
-            tar -xzf "$f" -C . \
-                && echo "   TAR.GZ 解压完成" \
-                || echo "   TAR.GZ 解压失败"
+            echo "解压 TAR.GZ: $f -> $extract_target_dir"
+            tar -xzf "$f" -C "$extract_target_dir"                 && echo "   TAR.GZ 解压完成"                 || echo "   TAR.GZ 解压失败"
             ;;
         *.001)
             base="${f%.*}"
             vol_count=$(ls "${base}".[0-9][0-9][0-9] 2>/dev/null | wc -l)
-            echo "解压 7z 分卷: $f（共 $vol_count 个分卷）"
-            if 7z x -y -aoa "$f" >/dev/null 2>&1; then
+            echo "解压 7z 分卷: $f -> $extract_target_dir（共 $vol_count 个分卷）"
+            if (
+                cd "$archive_dir" &&
+                7z x -y -aoa "-o$extract_target_dir" "$archive_name"
+            ) >/dev/null 2>&1; then
                 echo "   7z 分卷解压完成"
-            elif command -v unar >/dev/null 2>&1 && unar -force-overwrite "$f" >/dev/null 2>&1; then
+            elif command -v unar >/dev/null 2>&1 && (
+                cd "$archive_dir" &&
+                unar -force-overwrite -output-directory "$extract_target_dir" "$archive_name"
+            ) >/dev/null 2>&1; then
                 echo "   unar 解压完成"
             else
                 echo "   7z 分卷解压失败"
-                7z x -y -aoa "$f" 2>&1 | tail -n 20
+                (
+                    cd "$archive_dir" &&
+                    7z x -y -aoa "-o$extract_target_dir" "$archive_name"
+                ) 2>&1 | tail -n 20
             fi
             ;;
         *.7z)
-            echo "解压 7z: $f"
-            if 7z x -y -aoa "$f" >/dev/null 2>&1; then
+            echo "解压 7z: $f -> $extract_target_dir"
+            if (
+                cd "$archive_dir" &&
+                7z x -y -aoa "-o$extract_target_dir" "$archive_name"
+            ) >/dev/null 2>&1; then
                 echo "   7z 解压完成"
-            elif command -v unar >/dev/null 2>&1 && unar -force-overwrite "$f" >/dev/null 2>&1; then
+            elif command -v unar >/dev/null 2>&1 && (
+                cd "$archive_dir" &&
+                unar -force-overwrite -output-directory "$extract_target_dir" "$archive_name"
+            ) >/dev/null 2>&1; then
                 echo "   unar 解压完成"
             else
                 echo "   7z 解压失败"
-                7z x -y -aoa "$f" 2>&1 | tail -n 20
+                (
+                    cd "$archive_dir" &&
+                    7z x -y -aoa "-o$extract_target_dir" "$archive_name"
+                ) 2>&1 | tail -n 20
             fi
             ;;
         *.part1.rar)
@@ -1050,10 +1221,11 @@ extract_one_archive() {
                 base="${f%.*}"
                 base="${base%.*}"
                 vol_count=$(ls "${base}".part[0-9]*.rar 2>/dev/null | wc -l)
-                echo "解压 RAR 分卷(新格式): $f（共 $vol_count 个分卷）"
-                unrar x -o+ "$f" . >/dev/null 2>&1 \
-                    && echo "   RAR 分卷解压完成" \
-                    || echo "   RAR 分卷解压失败"
+                echo "解压 RAR 分卷(新格式): $f -> $extract_target_dir（共 $vol_count 个分卷）"
+                (
+                    cd "$archive_dir" &&
+                    unrar x -o+ "$archive_name" "$extract_target_dir/"
+                ) >/dev/null 2>&1                     && echo "   RAR 分卷解压完成"                     || echo "   RAR 分卷解压失败"
             else
                 echo "未安装 unrar，跳过 RAR 文件"
             fi
@@ -1066,13 +1238,14 @@ extract_one_archive() {
                 base="${f%.*}"
                 if ls "${base}".r[0-9][0-9] &>/dev/null; then
                     vol_count=$(( $(ls "${base}".r[0-9][0-9] 2>/dev/null | wc -l) + 1 ))
-                    echo "解压 RAR 分卷(旧格式): $f（共 $vol_count 个分卷）"
+                    echo "解压 RAR 分卷(旧格式): $f -> $extract_target_dir（共 $vol_count 个分卷）"
                 else
-                    echo "解压 RAR: $f"
+                    echo "解压 RAR: $f -> $extract_target_dir"
                 fi
-                unrar x -o+ "$f" . >/dev/null 2>&1 \
-                    && echo "   RAR 解压完成" \
-                    || echo "   RAR 解压失败"
+                (
+                    cd "$archive_dir" &&
+                    unrar x -o+ "$archive_name" "$extract_target_dir/"
+                ) >/dev/null 2>&1                     && echo "   RAR 解压完成"                     || echo "   RAR 解压失败"
             else
                 echo "未安装 unrar，跳过 RAR 文件"
             fi

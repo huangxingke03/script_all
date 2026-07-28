@@ -3,9 +3,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+COMMON_SH="${SCRIPT_DIR}/voice_build_common.sh"
+if [ ! -f "${COMMON_SH}" ]; then
+    echo "错误: 未找到 ${COMMON_SH}" >&2
+    exit 1
+fi
 # shellcheck disable=SC1091
-source "${REPO_ROOT}/voice_build/voice_build_common.sh"
+source "${COMMON_SH}"
 
 DEFAULT_DEVICE_SERIAL="f6e277ff"
 DEVICE_SERIAL="${DEFAULT_DEVICE_SERIAL}"
@@ -38,6 +42,6 @@ ensure_device_ready "${DEVICE_SERIAL}"
 DEVICE_NAME=$(get_device_display_name "${DEVICE_SERIAL}")
 
 echo "当前台架设备: ${DEVICE_SERIAL} (${DEVICE_NAME})"
-echo "执行音按键服务"
+echo "执行语音按键服务"
 adb_cmd shell am startservice     -n "${SERVICE_NAME}"     --es "seman" "${SEMAN_VALUE}"
-echo "已触发音按键服务"
+echo "已触发语音按键服务"

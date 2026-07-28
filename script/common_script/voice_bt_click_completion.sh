@@ -5,7 +5,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck disable=SC1091
 source "${REPO_ROOT}/voice_build/voice_build_common.sh"
 
-_sound_bt_click_completion() {
+_voice_bt_click_completion() {
     local cur prev device_query reply
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
@@ -25,14 +25,24 @@ _sound_bt_click_completion() {
     COMPREPLY=( $(compgen -W "-s -h" -- "${cur}") )
 }
 
-sound_bt_click_completion_repair() {
+voice_bt_click_completion_repair() {
     local command_name
     local -a commands=(
-        ./common_script/sound_bt_click.sh
+        ./common_script/voice_bt_click.sh
+        /home/huangxingke/.local/bin/voiceBtClick
+        /home/huangxingke/.local/bin/voicebtClick
+        /home/huangxingke/.local/bin/voiceBtclick
+        /home/huangxingke/.local/bin/voicebtclick
+        /home/huangxingke/.local/bin/voice_bt_click
         /home/huangxingke/.local/bin/soundBtClick
         /home/huangxingke/.local/bin/soundbtClick
         /home/huangxingke/.local/bin/soundBtclick
         /home/huangxingke/.local/bin/soundbtclick
+        voiceBtClick
+        voicebtClick
+        voiceBtclick
+        voicebtclick
+        voice_bt_click
         soundBtClick
         soundbtClick
         soundBtclick
@@ -52,8 +62,8 @@ sound_bt_click_completion_repair() {
         complete -r "${command_name}" 2>/dev/null || true
     done
     for command_name in "${commands[@]}"; do
-        complete -o nospace -F _sound_bt_click_completion "${command_name}"
+        complete -o nospace -F _voice_bt_click_completion "${command_name}"
     done
 }
 
-sound_bt_click_completion_repair
+voice_bt_click_completion_repair

@@ -3,7 +3,12 @@
 set -e
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-source "$SCRIPT_DIR/../voice_build_common.sh"
+COMMON_SH="$SCRIPT_DIR/voice_build_common.sh"
+if [ ! -f "$COMMON_SH" ]; then
+    echo "错误: 未找到 $COMMON_SH" >&2
+    exit 1
+fi
+source "$COMMON_SH"
 
 DEFAULT_DEVICE_SERIAL="f6e277ff"
 DEVICE_SERIAL="$DEFAULT_DEVICE_SERIAL"
