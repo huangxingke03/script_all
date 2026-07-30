@@ -99,6 +99,10 @@ install_script "${FEISHU_DIR}/download_feishu_config.sh" "${TARGET_DIR}/download
 echo "更新--- ${TARGET_DIR}/download_feishu_config.sh 成功----"
 cp "${FEISHU_DIR}/download_feishu_request.curl" "${TARGET_DIR}/download_feishu_request.curl"
 echo "更新--- ${TARGET_DIR}/download_feishu_request.curl 成功----"
+cp "${FEISHU_DIR}/download_feishu_request_d01.curl" "${TARGET_DIR}/download_feishu_request_d01.curl"
+echo "更新--- ${TARGET_DIR}/download_feishu_request_d01.curl 成功----"
+cp "${FEISHU_DIR}/download_feishu_request_d01_int.curl" "${TARGET_DIR}/download_feishu_request_d01_int.curl"
+echo "更新--- ${TARGET_DIR}/download_feishu_request_d01_int.curl 成功----"
 
 echo "===== 更新 Iflytek 脚本 ====="
 rm -f \

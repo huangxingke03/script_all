@@ -63,7 +63,10 @@ if [ "$FEISHU_CURL_FORCE" != "1" ] && [ "$FEISHU_AUTO_SELECT_PROJECTS" = "1" ]; 
         local base_dir="$1"
         local specific="$base_dir/download_feishu_request_${ISSUE_ID}.curl"
         local default="$base_dir/download_feishu_request_kp31.curl"
-        local project_aliases=("$base_dir/download_feishu_request_d01.curl")
+        local project_aliases=(
+            "$base_dir/download_feishu_request_d01.curl"
+            "$base_dir/download_feishu_request_d01_int.curl"
+        )
         local curl_file
 
         [ -d "$base_dir" ] || return 0
@@ -74,7 +77,7 @@ if [ "$FEISHU_CURL_FORCE" != "1" ] && [ "$FEISHU_AUTO_SELECT_PROJECTS" = "1" ]; 
         done
         while IFS= read -r -d '' curl_file; do
             case "$curl_file" in
-                "$specific"|"$default"|"${project_aliases[0]}")
+                "$specific"|"$default"|"${project_aliases[0]}"|"${project_aliases[1]}")
                     continue
                     ;;
             esac
