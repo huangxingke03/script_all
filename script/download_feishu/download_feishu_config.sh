@@ -5,7 +5,7 @@
 # Recommended usage:
 # 1. Open the target Feishu issue detail page in the browser.
 # 2. In DevTools, copy the issue-detail request as cURL (bash).
-# 3. Paste the full cURL text into `download_feishu_request.curl`.
+# 3. Paste the full cURL text into the matching request file, for example `download_feishu_request_kp31.curl` or `download_feishu_request_d01.curl`.
 # 4. Keep `FEISHU_CURL_EXPORT_FILE` pointing at that file.
 #
 # JIRA-history attachment usage:
@@ -16,7 +16,7 @@
 #
 # Browser-exported request used for extracting Feishu cookie / referer / user-agent.
 CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FEISHU_CURL_EXPORT_FILE="${CONFIG_DIR}/download_feishu_request.curl"
+FEISHU_CURL_EXPORT_FILE="${CONFIG_DIR}/download_feishu_request_kp31.curl"
 
 # Browser-exported JIRA request used only when Feishu returns Jira-history attachment URLs.
 # The downloader extracts the Cookie value from this cURL at runtime.

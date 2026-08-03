@@ -141,8 +141,8 @@
 - Variant: `downloadfeishufliter`
 - Variant: `download_feishu_fliter`
 - Config: `download_feishu/download_feishu_config.sh`
-- Request Template: `download_feishu/download_feishu_request.curl`
-- Request Routing: `downloadFeishu` / `downloadFeishuFliter` will prefer `download_feishu_request_<issue_id>.curl` first, then the default `download_feishu_request.curl`, then built-in project aliases such as `download_feishu_request_d01.curl` and `download_feishu_request_d01_int.curl`, then any other matching Feishu cURL exports in the script directory or source script directory
+- Request Template: `download_feishu/download_feishu_request_kp31.curl`
+- Request Routing: `downloadFeishu` / `downloadFeishuFliter` will prefer `download_feishu_request_<issue_id>.curl` first, then the default `download_feishu_request_kp31.curl`, then built-in project aliases such as `download_feishu_request_d01.curl` and `download_feishu_request_d01_int.curl`, then any other matching Feishu cURL exports in the script directory or source script directory
 - Attachment Rule: download every attachment URL returned by Feishu; JIRA-history attachments can use `FEISHU_ATTACHMENT_JIRA_COOKIE`
 - Filter Rule: `downloadFeishuFliter` keeps all `downloadFeishu` logic but skips `can_*.asc`, `mcu_*.zip`, and `qnx_*.zip` attachments before download and extraction
 - Save Dir Rule: keep the original naming order; normalize project text like `CHERY_KP31_Bug` to `KP31`, then prefer detected project prefix such as `KP31_7043211990` or `D01_7043211990`, otherwise fall back to the plain issue ID directory like `7043211990`
@@ -245,8 +245,8 @@
 - JIRA downloader configuration is now centered on `download_jira_request.curl`; `download_jira.sh` and `download_jira_filtered.sh` extract Cookie directly from that file at runtime, and `download_jira_cookie.sh` has been removed.
 - Recommended JIRA setup: copy any authenticated JIRA request as `cURL (bash)` from the browser and paste it into `download_jira/download_jira_request.curl`; the downloader only needs the `-b` / `Cookie` portion and does not require a specific endpoint.
 - Feishu implementation files live in `download_feishu/`; published commands are installed into `~/.local/bin` by `update_scipt_all.sh`.
-- Feishu downloader configuration is split into `download_feishu.sh`, `download_feishu_config.sh`, and `download_feishu_request.curl`, all under `download_feishu/`.
-- Recommended Feishu setup: copy the issue-detail request as `cURL (bash)` from the browser and paste it into `download_feishu/download_feishu_request.curl`; `download_feishu.sh` extracts cookie, referer, and user-agent from that file.
+- Feishu downloader configuration is split into `download_feishu.sh`, `download_feishu_config.sh`, `download_feishu_request_kp31.curl`, `download_feishu_request_d01.curl`, and `download_feishu_request_d01_int.curl`, all under `download_feishu/`.
+- Recommended Feishu setup: copy the issue-detail request as `cURL (bash)` from the browser and paste it into the matching request file such as `download_feishu/download_feishu_request_kp31.curl` or `download_feishu/download_feishu_request_d01.curl`; `download_feishu.sh` extracts cookie, referer, and user-agent from that file.
 - Fallback Feishu setup: if the copied cURL omits `-b` / `Cookie`, set `FEISHU_COOKIE` in `download_feishu/download_feishu_config.sh` or run `FEISHU_COOKIE='...' downloadfeishu <issue_id>`.
 - If Feishu returns JIRA-history attachment URLs, set `FEISHU_ATTACHMENT_JIRA_COOKIE` in `download_feishu/download_feishu_config.sh`; `download_feishu.sh` remains independent from `download_jira.sh` and only uses that extra cookie string for the returned attachment URL itself.
 - `downloadFeishu` now attempts every attachment URL returned by Feishu. If a returned JIRA-history attachment responds with the JIRA login page, the script treats it as a download failure and removes the fake file.
@@ -257,7 +257,7 @@
 - Common utility scripts live in `common_script/`; `update_scipt_all.sh` now publishes `startIflytekPage`, `startQnxD01`, `rebootDevice`, `killSystemui`, `renameUsbDir`, and `virtManager` from there, and loads their shared completion logic from the same directory.
 - 中文说明：这些通用命令都以发布到 `~/.local/bin` 的版本为准，不再依赖源码目录下的旧位置。
 - `updateSciptAll` is the only local update implementation in this repo; old `updateAll` and JIRA/Feishu legacy update names are compatibility aliases to the same unified updater.
-- `update_scipt_all.sh` publishes these downloader entry points: `downloadJira`, `downloadJiraFiltered`, `downloadFeishu`, `downloadFeishuFliter`, plus helper files `download_jira_request.curl`, `download_feishu_config.sh`, `download_feishu_request.curl`, `download_feishu_request_d01.curl`, and `download_feishu_request_d01_int.curl`.
+- `update_scipt_all.sh` publishes these downloader entry points: `downloadJira`, `downloadJiraFiltered`, `downloadFeishu`, `downloadFeishuFliter`, plus helper files `download_jira_request.curl`, `download_feishu_config.sh`, `download_feishu_request_kp31.curl`, `download_feishu_request_d01.curl`, and `download_feishu_request_d01_int.curl`.
 - Jira and Feishu downloader aliases are command-name aliases only; they do not need device completion.
 - Random log, `pullLogcatByAdb`, and `clearLogcatByAdb` variants support `-s` device selection and tab completion.
 - Voice command variants and Iflytek update command variants also support `-s` device selection and tab completion. Voice build implementations, shared helpers, completion logic, and VoiceAssistant API jar helper scripts now live in `voice_build/`. `update_scipt_all.sh` now publishes `voiceAssistant*`, `voiceSetting*`, `makeVoiceAssistantApiKp31`, and `makeVoiceAssistantApiD01` from there; Iflytek implementation scripts still live in `update_iflytek/`.

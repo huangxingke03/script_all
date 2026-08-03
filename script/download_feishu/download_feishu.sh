@@ -564,6 +564,46 @@ extract_issue_title() {
     printf '%s' "$issue_json" | jq -r '.data.name // .data.title // .data.summary // empty' 2>/dev/null | head -n 1
 }
 
+extract_issue_defect_number() {
+    local issue_json="$1"
+
+    printf '%s' "$issue_json" | jq -r '
+        .data.field_286612
+        // .data.for_leopard.field_286612
+        // (
+            [
+                .. | objects | .field_286612?,
+                .. | objects
+                | select(((.field_name? // .display_name? // .label? // .title? // empty) | tostring) == "缺陷编号")
+                | (.field_value? // .value? // .values? // .text? // .name? // .display_value? // .display_name? // empty),
+                .. | objects | .items[]?
+                | select(((.field_name? // .display_name? // .label? // .title? // empty) | tostring) == "缺陷编号")
+                | (.field_value? // .value? // .values? // .text? // .name? // .display_value? // .display_name? // empty)
+            ]
+            | map(
+                if type == "array" then
+                    map(
+                        if type == "object" then
+                            (.name // .label // .value // .text // .display_value // .display_name // empty)
+                        else
+                            .
+                        end
+                    )
+                    | map(select(type == "string" and length > 0 and . != "null"))
+                    | .[0]
+                elif type == "object" then
+                    (.name // .label // .value // .text // .display_value // .display_name // empty)
+                else
+                    .
+                end
+            )
+            | map(select(type == "string" and length > 0 and . != "null"))
+            | .[0]
+        )
+        // empty
+    ' 2>/dev/null | head -n 1
+}
+
 extract_issue_defect_type() {
     local issue_json="$1"
 
@@ -617,8 +657,8 @@ detect_project_name_from_text() {
 
     upper_text=$(printf '%s' "$source_text" | tr '[:lower:]' '[:upper:]')
 
-    # Match standalone platform tags and variants such as CHY_KP31 or CHERY_KP31_BUG.
-    if [[ "$upper_text" =~ (^|[^A-Z0-9])(KP31_INT|KP31|D01)([^A-Z0-9]|$) ]]; then
+    # Match standalone platform tags and variants such as CHY_KP31, CHERY_KP31_BUG, or D01-FL1.
+    if [[ "$upper_text" =~ (^|[^A-Z0-9])(KP31_INT|KP31|D01-FL1|D01)([^A-Z0-9]|$) ]]; then
         printf '%s
 ' "${BASH_REMATCH[2]}"
         return 0
@@ -723,6 +763,11 @@ normalize_project_name() {
 '
             return 0
             ;;
+        *D01-FL1*)
+            printf 'D01-FL1
+'
+            return 0
+            ;;
         *D01*)
             printf 'D01
 '
@@ -809,7 +854,7 @@ infer_issue_project_name() {
 
     title_text=$(extract_issue_title "$issue_json")
     upper_text=$(printf '%s' "$title_text" | tr '[:lower:]' '[:upper:]')
-    if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01)[\]】] ]]; then
+    if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01-FL1|D01)[\]】] ]]; then
         project_name=$(normalize_project_name "${BASH_REMATCH[1]}")
         printf '%s
 ' "$project_name"
@@ -824,7 +869,7 @@ infer_issue_project_name() {
 
     fallback_text=$(extract_issue_text_fallback "$issue_json")
     upper_text=$(printf '%s' "$fallback_text" | tr '[:lower:]' '[:upper:]')
-    if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01)[\]】] ]]; then
+    if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01-FL1|D01)[\]】] ]]; then
         project_name=$(normalize_project_name "${BASH_REMATCH[1]}")
         printf '%s
 ' "$project_name"
@@ -837,7 +882,7 @@ infer_issue_project_name() {
         return 0
     fi
 
-    for candidate in KP31_INT KP31 D01; do
+    for candidate in KP31_INT KP31 D01-FL1 D01; do
         if [[ "$upper_text" == *"$candidate"* ]]; then
             project_name=$(normalize_project_name "$candidate")
             printf '%s
@@ -845,6 +890,16 @@ infer_issue_project_name() {
             return 0
         fi
     done
+
+    defect_number=$(extract_issue_defect_number "$issue_json")
+    if [ -n "$defect_number" ]; then
+        if project_name=$(detect_project_name_from_text "$defect_number"); then
+            project_name=$(normalize_project_name "$project_name")
+            printf '%s
+' "$project_name"
+            return 0
+        fi
+    fi
 
     defect_type=$(extract_issue_defect_type "$issue_json")
     if [ -n "$defect_type" ]; then
@@ -1114,10 +1169,29 @@ is_supported_archive() {
     esac
 }
 
+render_extract_progress() {
+    local current="$1"
+    local total="$2"
+    local width=24
+    local filled=0
+    local percent=0
+    local bar
+
+    if [ "$total" -gt 0 ]; then
+        percent=$(( current * 100 / total ))
+        filled=$(( current * width / total ))
+    fi
+    [ "$filled" -gt "$width" ] && filled=$width
+    bar=$(printf '%*s' "$filled" '')
+    bar=${bar// /#}
+    bar=$(printf '%-*s' "$width" "$bar")
+    printf '\r\033[2K解压进度: [%s] %d%% (%d/%d)' "$bar" "$percent" "$current" "$total"
+}
+
 extract_one_archive() {
     local f="$1"
     local lower_name="${f,,}"
-    local archive_dir archive_name archive_stem extract_target_dir base companions has_companion=false vol_count
+    local archive_dir archive_name archive_stem extract_target_dir base companions has_companion=false
 
     archive_dir="$(dirname "$f")"
     archive_name="$(basename "$f")"
@@ -1125,27 +1199,13 @@ extract_one_archive() {
 
     archive_stem="$archive_name"
     case "$lower_name" in
-        *.tar.gz)
-            archive_stem="${archive_name%.tar.gz}"
-            ;;
-        *.tgz)
-            archive_stem="${archive_name%.tgz}"
-            ;;
-        *.part1.rar)
-            archive_stem="${archive_name%.part1.rar}"
-            ;;
-        *.rar)
-            archive_stem="${archive_name%.rar}"
-            ;;
-        *.zip)
-            archive_stem="${archive_name%.zip}"
-            ;;
-        *.7z)
-            archive_stem="${archive_name%.7z}"
-            ;;
-        *.001)
-            archive_stem="${archive_name%.001}"
-            ;;
+        *.tar.gz) archive_stem="${archive_name%.tar.gz}" ;;
+        *.tgz) archive_stem="${archive_name%.tgz}" ;;
+        *.part1.rar) archive_stem="${archive_name%.part1.rar}" ;;
+        *.rar) archive_stem="${archive_name%.rar}" ;;
+        *.zip) archive_stem="${archive_name%.zip}" ;;
+        *.7z) archive_stem="${archive_name%.7z}" ;;
+        *.001) archive_stem="${archive_name%.001}" ;;
     esac
 
     extract_target_dir="${archive_dir}/${archive_stem}"
@@ -1159,78 +1219,39 @@ extract_one_archive() {
                 [ -f "$c" ] && has_companion=true && break
             done
             if $has_companion; then
-                vol_count=$(ls "${base}".z[0-9][0-9] "${base}".Z[0-9][0-9] 2>/dev/null | wc -l)
-                echo "解压 ZIP 分卷: $f -> $extract_target_dir（共 $((vol_count + 1)) 个分卷）"
-                (
-                    cd "$archive_dir" &&
-                    7z x -y -aoa "-o$extract_target_dir" "$archive_name"
-                ) >/dev/null 2>&1                     && echo "   ZIP 分卷解压完成"                     || { echo "   ZIP 分卷解压失败"; (
-                            cd "$archive_dir" &&
-                            7z x -y -aoa "-o$extract_target_dir" "$archive_name"
-                        ) 2>&1 | tail -n 20; }
+                ( cd "$archive_dir" && 7z x -y -aoa "-o$extract_target_dir" "$archive_name" ) >/dev/null 2>&1
             else
-                echo "解压 ZIP: $f -> $extract_target_dir"
-                unzip -o "$f" -d "$extract_target_dir" >/dev/null 2>&1                     && echo "   ZIP 解压完成"                     || echo "   ZIP 解压失败"
+                unzip -o "$f" -d "$extract_target_dir" >/dev/null 2>&1
             fi
             ;;
         *.tar.gz|*.tgz)
-            echo "解压 TAR.GZ: $f -> $extract_target_dir"
-            tar -xzf "$f" -C "$extract_target_dir"                 && echo "   TAR.GZ 解压完成"                 || echo "   TAR.GZ 解压失败"
+            tar -xzf "$f" -C "$extract_target_dir" >/dev/null 2>&1
             ;;
         *.001)
-            base="${f%.*}"
-            vol_count=$(ls "${base}".[0-9][0-9][0-9] 2>/dev/null | wc -l)
-            echo "解压 7z 分卷: $f -> $extract_target_dir（共 $vol_count 个分卷）"
-            if (
-                cd "$archive_dir" &&
-                7z x -y -aoa "-o$extract_target_dir" "$archive_name"
-            ) >/dev/null 2>&1; then
-                echo "   7z 分卷解压完成"
-            elif command -v unar >/dev/null 2>&1 && (
-                cd "$archive_dir" &&
-                unar -force-overwrite -output-directory "$extract_target_dir" "$archive_name"
-            ) >/dev/null 2>&1; then
-                echo "   unar 解压完成"
+            if ( cd "$archive_dir" && 7z x -y -aoa "-o$extract_target_dir" "$archive_name" ) >/dev/null 2>&1; then
+                :
+            elif command -v unar >/dev/null 2>&1 && ( cd "$archive_dir" && unar -force-overwrite -output-directory "$extract_target_dir" "$archive_name" ) >/dev/null 2>&1; then
+                :
             else
-                echo "   7z 分卷解压失败"
-                (
-                    cd "$archive_dir" &&
-                    7z x -y -aoa "-o$extract_target_dir" "$archive_name"
-                ) 2>&1 | tail -n 20
+                ( cd "$archive_dir" && 7z x -y -aoa "-o$extract_target_dir" "$archive_name" ) 2>&1 | tail -n 20
+                return 1
             fi
             ;;
         *.7z)
-            echo "解压 7z: $f -> $extract_target_dir"
-            if (
-                cd "$archive_dir" &&
-                7z x -y -aoa "-o$extract_target_dir" "$archive_name"
-            ) >/dev/null 2>&1; then
-                echo "   7z 解压完成"
-            elif command -v unar >/dev/null 2>&1 && (
-                cd "$archive_dir" &&
-                unar -force-overwrite -output-directory "$extract_target_dir" "$archive_name"
-            ) >/dev/null 2>&1; then
-                echo "   unar 解压完成"
+            if ( cd "$archive_dir" && 7z x -y -aoa "-o$extract_target_dir" "$archive_name" ) >/dev/null 2>&1; then
+                :
+            elif command -v unar >/dev/null 2>&1 && ( cd "$archive_dir" && unar -force-overwrite -output-directory "$extract_target_dir" "$archive_name" ) >/dev/null 2>&1; then
+                :
             else
-                echo "   7z 解压失败"
-                (
-                    cd "$archive_dir" &&
-                    7z x -y -aoa "-o$extract_target_dir" "$archive_name"
-                ) 2>&1 | tail -n 20
+                ( cd "$archive_dir" && 7z x -y -aoa "-o$extract_target_dir" "$archive_name" ) 2>&1 | tail -n 20
+                return 1
             fi
             ;;
         *.part1.rar)
             if command -v unrar >/dev/null 2>&1; then
-                base="${f%.*}"
-                base="${base%.*}"
-                vol_count=$(ls "${base}".part[0-9]*.rar 2>/dev/null | wc -l)
-                echo "解压 RAR 分卷(新格式): $f -> $extract_target_dir（共 $vol_count 个分卷）"
-                (
-                    cd "$archive_dir" &&
-                    unrar x -o+ "$archive_name" "$extract_target_dir/"
-                ) >/dev/null 2>&1                     && echo "   RAR 分卷解压完成"                     || echo "   RAR 分卷解压失败"
+                ( cd "$archive_dir" && unrar x -o+ "$archive_name" "$extract_target_dir/" ) >/dev/null 2>&1
             else
-                echo "未安装 unrar，跳过 RAR 文件"
+                return 0
             fi
             ;;
         *.rar)
@@ -1238,19 +1259,9 @@ extract_one_archive() {
                 if [[ "$lower_name" =~ \.part[0-9]+\.rar$ ]]; then
                     return 0
                 fi
-                base="${f%.*}"
-                if ls "${base}".r[0-9][0-9] &>/dev/null; then
-                    vol_count=$(( $(ls "${base}".r[0-9][0-9] 2>/dev/null | wc -l) + 1 ))
-                    echo "解压 RAR 分卷(旧格式): $f -> $extract_target_dir（共 $vol_count 个分卷）"
-                else
-                    echo "解压 RAR: $f -> $extract_target_dir"
-                fi
-                (
-                    cd "$archive_dir" &&
-                    unrar x -o+ "$archive_name" "$extract_target_dir/"
-                ) >/dev/null 2>&1                     && echo "   RAR 解压完成"                     || echo "   RAR 解压失败"
+                ( cd "$archive_dir" && unrar x -o+ "$archive_name" "$extract_target_dir/" ) >/dev/null 2>&1
             else
-                echo "未安装 unrar，跳过 RAR 文件"
+                return 0
             fi
             ;;
     esac
@@ -1258,26 +1269,21 @@ extract_one_archive() {
 
 extract_archives_recursively() {
     local archive_path archive rel_path lower_name processed_in_pass
-    # Track relative paths we have already extracted so newly-created files can be
-    # picked up in the next pass without repeatedly reprocessing the same archive.
+    local -a pending_archives=()
+    local total_archives=0
+    local completed_archives=0
     declare -gA extracted_archives_seen=()
 
     while :; do
-        processed_in_pass=0
-        # Walk the whole download tree because Feishu attachments often contain
-        # nested archives that only appear after the first extraction pass.
+        pending_archives=()
         while IFS= read -r -d '' archive_path; do
             [ -f "$archive_path" ] || continue
-
             rel_path="${archive_path#./}"
             [ -n "$rel_path" ] || rel_path="$(basename "$archive_path")"
             is_supported_archive "$rel_path" || continue
-
             lower_name="${rel_path,,}"
             case "$lower_name" in
-                *.z[0-9][0-9]|*.r[0-9][0-9])
-                    continue
-                    ;;
+                *.z[0-9][0-9]|*.r[0-9][0-9]) continue ;;
             esac
             if [[ "$lower_name" =~ \.part[0-9]+\.rar$ ]] && [[ "$lower_name" != *.part1.rar ]]; then
                 continue
@@ -1285,21 +1291,60 @@ extract_archives_recursively() {
             if [[ "$lower_name" =~ \.[0-9]{3}$ ]] && [[ "$lower_name" != *.001 ]]; then
                 continue
             fi
-
             [[ -n "${extracted_archives_seen[$rel_path]}" ]] && continue
-            extracted_archives_seen["$rel_path"]=1
-
-            archive="$(basename "$archive_path")"
-            # Extract in the archive's own directory so companion volumes and
-            # relative output paths behave the same as manual extraction.
-            (
-                cd "$(dirname "$archive_path")" || exit 1
-                extract_one_archive "$archive"
-            )
-            processed_in_pass=1
+            pending_archives+=("$archive_path")
         done < <(find . -type f \( -iname "*.zip" -o -iname "*.tar.gz" -o -iname "*.tgz" -o -iname "*.7z" -o -iname "*.001" -o -iname "*.rar" \) -print0)
 
-        [ "$processed_in_pass" -eq 1 ] || break
+        [ "${#pending_archives[@]}" -gt 0 ] || break
+        total_archives=$((completed_archives + ${#pending_archives[@]}))
+        processed_in_pass=0
+
+        for archive_path in "${pending_archives[@]}"; do
+            rel_path="${archive_path#./}"
+            [ -n "$rel_path" ] || rel_path="$(basename "$archive_path")"
+            extracted_archives_seen["$rel_path"]=1
+            archive="$(basename "$archive_path")"
+            render_extract_progress "$completed_archives" "$total_archives"
+            ( cd "$(dirname "$archive_path")" || exit 1; extract_one_archive "$archive" )
+            completed_archives=$((completed_archives + 1))
+            render_extract_progress "$completed_archives" "$total_archives"
+            processed_in_pass=1
+        done
+    done
+
+    if [ "$completed_archives" -gt 0 ]; then
+        printf '\n'
+    fi
+}
+
+
+rehome_top_level_groups() {
+    local entry name prefix parent count
+    declare -A prefix_counts=()
+
+    while IFS= read -r -d '' entry; do
+        [ -d "$entry" ] || continue
+        name=$(basename "$entry")
+        if [[ "$name" =~ ^([A-Za-z][A-Za-z0-9]*)-[0-9]{4,} ]]; then
+            prefix="${BASH_REMATCH[1]}"
+        else
+            continue
+        fi
+        prefix_counts["$prefix"]=$(( ${prefix_counts["$prefix"]:-0} + 1 ))
+    done < <(find "$SAVE_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
+
+    for prefix in "${!prefix_counts[@]}"; do
+        count=${prefix_counts[$prefix]}
+        [ "$count" -lt 2 ] && continue
+        parent="$SAVE_DIR/$prefix"
+        mkdir -p "$parent"
+        while IFS= read -r -d '' entry; do
+            [ -d "$entry" ] || continue
+            name=$(basename "$entry")
+            if [[ "$name" =~ ^${prefix}-[0-9]{4,} ]]; then
+                mv -n "$entry" "$parent/"
+            fi
+        done < <(find "$SAVE_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
     done
 }
 
@@ -1466,6 +1511,7 @@ done
 cd "$SAVE_DIR" || exit 1
 shopt -s nullglob nocaseglob
 extract_archives_recursively
+rehome_top_level_groups
 fix_logcat_permissions
 
 shopt -u nullglob nocaseglob
