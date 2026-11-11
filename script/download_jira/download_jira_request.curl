@@ -1,19 +1,17 @@
-curl 'https://jira-shzj.auto-link.com.cn/rest/webResources/1.0/resources' \
-  -H 'Accept: application/json, text/javascript, */*; q=0.01' \
+curl 'https://jira-shzj.auto-link.com.cn/browse/D01HW-2820' \
+  -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
   -H 'Accept-Language: zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7' \
   -H 'Cache-Control: no-cache' \
   -H 'Connection: keep-alive' \
-  -H 'Content-Type: application/json' \
-  -b 'jira.editor.user.mode=source; JSESSIONID=0339CFB543F6CD586A99FEA4D8EEEB9F; seraph.rememberme.cookie=104942%3Aa4e417b27e24f2d5967263738bc50d2e5fddc396; atlassian.xsrf.token=BWB8-5DWA-IKRE-Q10M_0a6aeacedf0aa65c1f272f8be9748ccaaa131503_lin' \
-  -H 'Origin: https://jira-shzj.auto-link.com.cn' \
+  -b 'seraph.rememberme.cookie=105638%3A5842bd9123253097a374724b38ecf1bd758faf4e; JSESSIONID=C099FB2C777C771561C441DAA5ACCE7F; atlassian.xsrf.token=BWB8-5DWA-IKRE-Q10M_8471d006c167fa7b02c1fc037eb86811c448281a_lin' \
   -H 'Pragma: no-cache' \
-  -H 'Referer: https://jira-shzj.auto-link.com.cn/browse/D01-47648?filter=-1' \
-  -H 'Sec-Fetch-Dest: empty' \
-  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Referer: https://jira-shzj.auto-link.com.cn/secure/Dashboard.jspa' \
+  -H 'Sec-Fetch-Dest: document' \
+  -H 'Sec-Fetch-Mode: navigate' \
   -H 'Sec-Fetch-Site: same-origin' \
+  -H 'Sec-Fetch-User: ?1' \
+  -H 'Upgrade-Insecure-Requests: 1' \
   -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36' \
-  -H 'X-Requested-With: XMLHttpRequest' \
   -H 'sec-ch-ua: "Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"' \
   -H 'sec-ch-ua-mobile: ?0' \
-  -H 'sec-ch-ua-platform: "Linux"' \
-  --data-raw '{"r":[],"c":["browser-metrics-plugin.contrib"],"xc":["_super","jira.view.issue","atl.general","viewissue.standalone","jira.navigator.kickass","jira.global","jira.navigator","jira.navigator.simple","jira.navigator.advanced"],"xr":["jira.filter.deletion.warning:styles"]}'
+  -H 'sec-ch-ua-platform: "Linux"'

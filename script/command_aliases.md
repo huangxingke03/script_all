@@ -1,5 +1,39 @@
 # Command Aliases
 
+本地命令由 `update_scipt_all.sh`（`updateSciptAll`）发布到 `~/.local/bin`。正式名见各节 `Standard`；大小写变体与兼容别名见 `Variant` / `Compatibility`。改完脚本后执行 `updateSciptAll`，必要时 `hash -r` / `source ~/.bashrc`。
+
+## Catalog（按源码目录）
+
+### `voice_build/`
+- `voiceAssistantD01` / `voiceAssistantKp31` / `voiceAssistantT12a`：编译并推语音助手 APK
+- `voiceSettingD01` / `voiceSettingKp31`：编译并覆盖安装语音设置 APK
+- `makeVoiceAssistantApiD01` / `makeVoiceAssistantApiKp31`：本地打 VoiceAssistant API jar
+- 共享：`voice_build_common.sh`、`voice_assistant_completion.sh`
+
+### `common_script/`
+- 设备：`startIflytekPage`、`startQnxD01`、`startBootGuideKP31`、`setSalesArea`、`setUUIDKP31`、`resetVat`、`resetVst`、`killSystemui`、`rebootDevice`、`voiceBtClick`、`renameUsbDir`
+- 虚拟机：`virtManager`、`startWin10`、`closeWin10`、`syncftu`、`fixVirbrRoute`
+- 桌面快捷方式：`virt_manager.desktop`、`start_win10.desktop`、`close_win10.desktop`
+
+### `logcat_sum/`
+- `startRandomLog` / `stopRandomLog`、`pullLogcatByAdb`、`clearLogcatByAdb`
+
+### `download_jira/` / `download_feishu/`
+- `downloadJira` / `downloadJiraFiltered`
+- `downloadFeishu` / `downloadFeishuFliter`（快捷 `downloadb` / `dfres`）
+- 请求模板：`*.curl`；飞书配置：`download_feishu_config.sh`
+
+### `update_iflytek/`
+- 整包系统更新：`updateD01Sys`、`updateD01IntSys`、`updateD01pIntSys`、`updateKp31Sys`、`updateKp31IntSys`
+- 仅推 `build.prop`：`updateD01SysSetting`、`updateD01IntSysSetting`
+- 仅推讯飞资源/APK：`updateIflytekResD01`、`updateIflytekResD01Int`、`updateIflytekResKp31`
+- 薄封装替换 prop：`replaceLocal`、`replaceLocalD01p`、`replaceOut`、`replaceOutD01p`
+
+### 根目录工具
+- `updateSciptAll`：统一发布/刷新本地命令与补全
+- `shell_refresh_hooks.sh`：由 `~/.bashrc` 加载，刷新补全，不发布命令
+- `download_completion.sh`：下载类命令 Tab 补全
+
 ## Voice Assistant D01
 - Standard: `voiceAssistantD01`
 - Variant: `voiceassistantD01`
@@ -9,18 +43,24 @@
 - Variant: `voiceassistantd01`
 - Variant: `voiceAssistantdo1`
 - Variant: `voiceassistantdo1`
+- 中文说明：编译 `d01/VoiceAssistant` debug APK，经 staging 推到 `/system/app/ALVoiceAssistant/`。支持 `-s`，默认设备 `f6e277ff`。
+- Source: `voice_build/voice_assistant_d01.sh`
 
 ## Voice Assistant KP31
 - Standard: `voiceAssistantKp31`
 - Variant: `voiceassistantKp31`
 - Variant: `voiceAssistantkp31`
 - Variant: `voiceassistantkp31`
+- 中文说明：编译并推送 KP31 语音助手 debug APK。支持 `-s`。
+- Source: `voice_build/voice_assistant_kp31.sh`
 
 ## Voice Assistant T12A
 - Standard: `voiceAssistantT12a`
 - Variant: `voiceassistantT12a`
 - Variant: `voiceAssistantt12a`
 - Variant: `voiceassistantt12a`
+- 中文说明：编译并推送 T12A 语音助手 debug APK。支持 `-s`。
+- Source: `voice_build/voice_assistant_t12a.sh`
 
 ## Voice Setting D01
 - Standard: `voiceSettingD01`
@@ -31,12 +71,16 @@
 - Variant: `voicesettingd01`
 - Variant: `voiceSettingdo1`
 - Variant: `voicesettingdo1`
+- 中文说明：编译 `d01/VoiceSetting` 后 `adb install -r -d` 覆盖安装，不依赖 `/system` 可写。支持 `-s`，默认 `f6e277ff`。
+- Source: `voice_build/voice_setting_d01.sh`
 
 ## Voice Setting KP31
 - Standard: `voiceSettingKp31`
 - Variant: `voicesettingKp31`
 - Variant: `voiceSettingkp31`
 - Variant: `voicesettingkp31`
+- 中文说明：编译并覆盖安装 KP31 语音设置。支持 `-s`。
+- Source: `voice_build/voice_setting_kp31.sh`
 
 ## Voice Assistant API KP31
 - Standard: `makeVoiceAssistantApiKp31`
@@ -46,6 +90,8 @@
 - Variant: `makevoiceassistantapikp31`
 - Variant: `make_voice_assistant_api_kp31`
 - Variant: `make_voice_assistant_api_kp31.sh`
+- 中文说明：本地打 KP31 VoiceAssistant API jar；版本可写 `1.8.7` 或三位简写 `187`。不支持 `-s`。
+- Source: `voice_build/make_voice_assistant_api_kp31.sh`
 
 ## Voice Assistant API D01
 - Standard: `makeVoiceAssistantApiD01`
@@ -60,6 +106,8 @@
 - Variant: `makevoiceassistantapido1`
 - Variant: `make_voice_assistant_api_d01`
 - Variant: `make_voice_assistant_api_d01.sh`
+- 中文说明：本地打 D01 VoiceAssistant API jar；版本可写 `2.1.1` 或三位简写 `211`。不支持 `-s`。
+- Source: `voice_build/make_voice_assistant_api_d01.sh`
 
 ## Xunfei KP31
 - Standard: `startIflytekPage`
@@ -97,6 +145,20 @@
 - Variant: `set_sales_area`
 - 中文说明：`adb root` 后设置 `persist.vendor.oem.cfg.vci.b.sales.area.icc`。信号值由参数传入，例如 `setSalesArea 7`。多台设备在线时用 `-s` 指定。
 - Tab Completion: 输入 `setsa` / `setsales` / `SETSALESAREA` / `set_sales` 会补成正式命令 `setSalesArea`。命令后的 Tab 提示 `-s`、`-h`，`-s` 后再 Tab 只列出当前在线设备。
+- Source: `common_script/setSalesArea.sh`
+
+## Set UUID KP31
+- Standard: `setUUIDKP31`
+- Variant: `setUuidKP31`
+- Variant: `setUUIDKp31`
+- Variant: `setUuidKp31`
+- Variant: `setuuidKP31`
+- Variant: `setuuidKp31`
+- Variant: `setuuidkp31`
+- Variant: `set_uuid_kp31`
+- 中文说明：`adb root` / `remount` 后开启 `persist.vendor.autolink.support_custom_code`，写入固定 UUID `WP00KP31N50200000180A7PV00000019` 到 `ro.vendor.autolink.car.uuid`，再 `sync` + `stop`/`start` 并回读 uuid 相关属性。支持 `-s`。
+- Tab Completion: 命令后的 Tab 提示 `-s`、`-h`；`-s` 后再 Tab 列出当前在线设备。
+- Source: `common_script/setUUIDKP31.sh`
 
 ## Reset Voice Assistant
 - Standard: `resetVat`
@@ -141,6 +203,8 @@
 - Standard: `rebootDevice`
 - Variant: `rebootdevice`
 - Variant: `reboot_device`
+- 中文说明：对当前（或 `-s` 指定）在线设备执行 `adb reboot`。
+- Source: `common_script/reboot_device.sh`
 
 ## Random Log
 - Standard: `startRandomLog`
@@ -151,7 +215,8 @@
 - Variant: `stoprandomLog`
 - Variant: `stopRandomlog`
 - Variant: `stoprandomlog`
-- 中文说明：用于启动或停止随机日志采集，`stopRandomLog` 会复用同一套采集逻辑。
+- 中文说明：用于启动或停止随机日志采集，`stopRandomLog` 会复用同一套采集逻辑。支持 `-s`。
+- Source: `logcat_sum/start_random_log.sh`、`logcat_sum/stop_random_log.sh`
 
 ## Jira Commands
 - Standard: `downloadJira`
@@ -208,6 +273,20 @@
 - Variant: `updateD01intSys`
 - Variant: `updateDO1intSys`
 - Variant: `updatedo1intSys`
+- 中文说明：D01 国际整包更新。先跑 `updateD01IntSysSetting` 推 `build_out.prop`，再推 `D01_INT/iflytek/res` 与 `D01_INT/system/app`，清相关应用缓存后重启。对齐 `origin/al_chery-d01_dev2`。支持 `-s`。
+- Source: `update_iflytek/update_d01_Int_sys.sh`
+- Standard: `updateD01IntSysSetting`
+- Variant: `updated01IntSysSetting`
+- Variant: `updateDO1IntSysSetting`
+- Variant: `updatedo1IntSysSetting`
+- Variant: `updateD01intSysSetting`
+- Variant: `updateDO1intSysSetting`
+- Variant: `updatedo1intSysSetting`
+- Variant: `updated01intSysSetting`
+- Variant: `update_d01_Int_sys_setting`
+- Variant: `update_d01_Int_sys_setting.sh`
+- 中文说明：只推 D01 国际系统配置：清空 dalvik/package cache 后，把 `build_out.prop` 推到 `/system/build.prop` 并 `sync`。不推讯飞资源/APK、不重启。支持 `-s`。
+- Source: `update_iflytek/update_d01_Int_sys_setting.sh`
 - Standard: `updateD01Sys`
 - Variant: `updated01Sys`
 - Variant: `updateDO1Sys`
@@ -215,6 +294,20 @@
 - Variant: `updateD01sys`
 - Variant: `updateDO1sys`
 - Variant: `updatedo1sys`
+- 中文说明：D01 国内整包更新。先跑 `updateD01SysSetting` 推 `build.prop`，再推 `D01/iflytek/res` 与 `D01/system/app`，清相关应用缓存后重启。对齐 `origin/al_chery-d01_dev2`。支持 `-s`。
+- Source: `update_iflytek/update_d01_sys.sh`
+- Standard: `updateD01SysSetting`
+- Variant: `updated01SysSetting`
+- Variant: `updateDO1SysSetting`
+- Variant: `updatedo1SysSetting`
+- Variant: `updateD01sysSetting`
+- Variant: `updateDO1sysSetting`
+- Variant: `updatedo1sysSetting`
+- Variant: `updated01sysSetting`
+- Variant: `update_d01_sys_setting`
+- Variant: `update_d01_sys_setting.sh`
+- 中文说明：只推 D01 国内系统配置：清空 dalvik/package cache 后，把 `build.prop` 推到 `/system/build.prop` 并 `sync`。不推讯飞资源/APK、不重启。支持 `-s`。
+- Source: `update_iflytek/update_d01_sys_setting.sh`
 - Standard: `replaceLocal`
 - Rule: `replaceLocal` is a thin entry only. Logic is maintained separately in `/home/huangxingke/work/file/讯飞切换版本/build_replace/sh/replace_local.sh` (`adb root` / `remount` / clear dalvik+package cache / push `build.prop` / `sync` / `adb reboot`). Wrapper: `update_iflytek/replace_local.sh` only forwards (supports `-s <serial>`). Does not pull iFlytek git or clear apps.
 - Standard: `replaceLocalD01p`
@@ -233,14 +326,20 @@
 - Variant: `updateD01pintSys`
 - Variant: `updateDO1pintSys`
 - Variant: `updatedo1pintSys`
+- 中文说明：D01P 国际讯飞系统资源更新。支持 `-s`。
+- Source: `update_iflytek/update_d01p_int_sys.sh`
 - Standard: `updateKp31IntSys`
 - Variant: `updatekp31IntSys`
 - Variant: `updateKp31intSys`
 - Variant: `updatekp31intSys`
+- 中文说明：KP31 国际讯飞系统资源更新。支持 `-s`。
+- Source: `update_iflytek/update_kp31_int_sys.sh`
 - Standard: `updateKp31Sys`
 - Variant: `updatekp31Sys`
 - Variant: `updateKp31sys`
 - Variant: `updatekp31sys`
+- 中文说明：KP31 国内讯飞系统资源更新。支持 `-s`。
+- Source: `update_iflytek/update_kp31_sys.sh`
 
 ## Iflytek Resource Update Commands
 - Standard: `updateIflytekResD01`
@@ -288,6 +387,8 @@
 - Variant: `renameUsbdir`
 - Variant: `renameusbdir`
 - Variant: `rename_usb_dir`
+- 中文说明：把已挂载 U 盘目录改名；默认可改脚本内 `MOUNT_POINT`/`DEVICE`，也可传两个参数 `<old> <new>`。
+- Source: `common_script/rename_usb_dir.sh`
 
 ## Pull Logcat By Adb
 - Standard: `pullLogcatByAdb`
@@ -295,6 +396,8 @@
 - Variant: `pullLogcatbyAdb`
 - Variant: `pulllogcatbyAdb`
 - Variant: `pull_logcat_by_adb`
+- 中文说明：从设备拉取日志目录（默认远端 `/log`）到本地 `~/下载`，支持 `-s` 选设备。
+- Source: `logcat_sum/pull_logcat_by_adb.sh`
 
 ## Clear Logcat By Adb
 - Standard: `clearLogcatByAdb`
@@ -302,6 +405,8 @@
 - Variant: `clearLogcatbyAdb`
 - Variant: `clearlogcatbyAdb`
 - Variant: `clear_logcat_by_adb`
+- 中文说明：清空设备指定日志目录（可传路径，如 `/data/log`），支持 `-s`。
+- Source: `logcat_sum/clear_logcat_by_adb.sh`
 
 ## Voice Bt Click
 - Standard: `voiceBtClick`
@@ -365,9 +470,14 @@
 - Variant: `SYNCFILETOUBUNTU`
 - Variant: `sync-filetoubuntu`
 - Compatibility: `sync-filetoubuntu-from-vm.sh`
-- 中文说明：把 Windows 虚拟机 `win10-pct` 上的共享目录 `FileToUbuntu` 同步到 Ubuntu 侧栏目录 `~/FileToUbuntu`。与 `pcatusb`（9008 透传）无关。默认只同步、不删本地已有文件。公司网卡 `cnem_vnic` 常抢 `192.168.122.0/24` 路由（表现 `NT_STATUS_HOST_UNREACHABLE`）；`fix_virbr_route.sh` 用独立 table/ip rule 强制走 `virbr0`，并由系统服务 `fix-virbr-route.service` 每 15s 重刷。`syncftu` 若发现默认路由不经 `virbr0` 会自动 `--fix-route`（可能弹 pkexec）。定时静默同步用 `syncftu --quiet`。可选 `-s` 指定台架设备序列号（仅校验设备在线）。
+- 中文说明：把 Windows 虚拟机 `win10-pct` 上的共享目录 `FileToUbuntu` 同步到 Ubuntu 侧栏目录 `~/FileToUbuntu`。与 `pcatusb`（9008 透传）无关。默认只同步、不删本地已有文件。公司网卡 `cnem_vnic` 常抢 `192.168.122.0/24` 路由（表现 `NT_STATUS_HOST_UNREACHABLE`）；`fixVirbrRoute` / `fix_virbr_route.sh` 用独立 table/ip rule 强制走 `virbr0`，并由系统服务 `fix-virbr-route.service` 每 15s 重刷。`syncftu` 若发现默认路由不经 `virbr0` 会自动 `--fix-route`（可能弹 pkexec）。定时静默同步用 `syncftu --quiet`。可选 `-s` 指定台架设备序列号（仅校验设备在线）。
 - Tab Completion: 输入 `sync` / `SYNC` / `syncftu` / `SYNCFTU` / `syncFile` 可补到正式命令 `syncftu`（忽略大小写）。命令后的 Tab 提示 `-s`、`-q`/`--quiet`、`-f`/`--fix-route`、`-h`/`--help`；`-s` 后再 Tab 只列出当前在线设备。
 - Source: `common_script/sync_filetoubuntu.sh`，依赖同目录 `fix_virbr_route.sh`；补全逻辑在 `common_script/syncftu_completion.sh`。
+
+## Fix Virbr Route
+- Standard: `fixVirbrRoute`
+- 中文说明：独立路由修复工具。清理被 `cnem` 劫持的 `192.168.122.0/24` / `192.168.122.100` 路由，强制走 `virbr0`，并写入独立 routing table + `ip rule`。可供 `syncftu --fix-route` 调用，也可单独执行（通常需要提权）。
+- Source: `common_script/fix_virbr_route.sh`
 
 ## Notes
 - JIRA implementation files live in `download_jira/`; published commands are installed into `~/.local/bin` by `update_scipt_all.sh`.
@@ -383,27 +493,29 @@
 - `downloadFeishu` keeps the original save-dir naming logic: it first uses the existing project-name/version/title detection flow, normalizes project text such as `CHERY_KP31_Bug` to `KP31`, adds `KP31` / `D01` fallback recognition from Feishu text when needed, and if nothing matches still falls back to `/home/huangxingke/下载/<issue_id>`.
 - Log-related implementation and completion files live in `logcat_sum/`; `update_scipt_all.sh` now publishes `startRandomLog`, `stopRandomLog`, `pullLogcatByAdb`, and `clearLogcatByAdb` from there.
 - 中文说明：随机日志命令支持 `-s` 选设备，`stopRandomLog` 直接复用已发布的 `startRandomLog`。
-- Common utility scripts live in `common_script/`; `update_scipt_all.sh` now publishes `startIflytekPage`, `startQnxD01`, `startBootGuideKP31`, `rebootDevice`, `killSystemui`, `resetVat`, `resetVst`, `setSalesArea`, `renameUsbDir`, `virtManager`, `startWin10`, `closeWin10`, and `syncftu` from there, and loads their shared completion logic from the same directory.
+- Common utility scripts live in `common_script/`; `update_scipt_all.sh` publishes `startIflytekPage`, `startQnxD01`, `startBootGuideKP31`, `rebootDevice`, `killSystemui`, `resetVat`, `resetVst`, `setSalesArea`, `setUUIDKP31`, `renameUsbDir`, `virtManager`, `startWin10`, `closeWin10`, `fixVirbrRoute`, and `syncftu` from there, and loads shared completion logic from the same directory.
 - 中文说明：这些通用命令都以发布到 `~/.local/bin` 的版本为准，不再依赖源码目录下的旧位置。
-- `syncftu` / `syncFileToUbuntu` 用于 Windows 虚拟机 `FileToUbuntu` → Ubuntu `~/FileToUbuntu` 文件同步；源码在 `common_script/sync_filetoubuntu.sh`，路由修复在 `common_script/fix_virbr_route.sh`。与 `pcatusb` 刷机透传相互独立。
+- `syncftu` / `syncFileToUbuntu` 用于 Windows 虚拟机 `FileToUbuntu` → Ubuntu `~/FileToUbuntu` 文件同步；源码在 `common_script/sync_filetoubuntu.sh`，路由修复命令为 `fixVirbrRoute`（`common_script/fix_virbr_route.sh`）。与 `pcatusb` 刷机透传相互独立。
 - `updateSciptAll` is the only local update implementation in this repo; old `updateAll` and JIRA/Feishu legacy update names are compatibility aliases to the same unified updater.
 - `update_scipt_all.sh` publishes these downloader entry points: `downloadJira`, `downloadJiraFiltered`, `downloadFeishu`, `downloadFeishuFliter`, plus helper files `download_jira_request.curl`, `download_feishu_config.sh`, `download_feishu_request_kp31.curl`, `download_feishu_request_d01.curl`, and `download_feishu_request_d01_int.curl`.
 - Jira and Feishu downloader aliases are command-name aliases only; they do not need device completion.
 - Random log, `pullLogcatByAdb`, and `clearLogcatByAdb` variants support `-s` device selection and tab completion.
-- Voice command variants and Iflytek update command variants also support `-s` device selection and tab completion. `updateIflytekResD01`, `updateIflytekResD01Int`, and `updateIflytekResKp31` are resource-only shortcuts published from `update_iflytek/update_iflytek_res_d01.sh`, `update_iflytek/update_iflytek_res_d01_int.sh`, and `update_iflytek/update_iflytek_res_kp31.sh`. Voice build implementations, shared helpers, completion logic, and VoiceAssistant API jar helper scripts now live in `voice_build/`. `update_scipt_all.sh` now publishes `voiceAssistant*`, `voiceSetting*`, `makeVoiceAssistantApiKp31`, and `makeVoiceAssistantApiD01` from there; Iflytek implementation scripts still live in `update_iflytek/`.
+- Voice command variants and Iflytek update command variants also support `-s` device selection and tab completion. Full Iflytek publish set from `update_iflytek/` includes: `updateD01Sys` / `updateD01SysSetting`, `updateD01IntSys` / `updateD01IntSysSetting`, `updateD01pIntSys`, `updateKp31Sys`, `updateKp31IntSys`, `updateIflytekResD01` / `updateIflytekResD01Int` / `updateIflytekResKp31`, and `replaceLocal` / `replaceLocalD01p` / `replaceOut` / `replaceOutD01p`. Resource-only shortcuts come from `update_iflytek_res_*.sh`. Voice build implementations live in `voice_build/`; `update_scipt_all.sh` publishes `voiceAssistant*`, `voiceSetting*`, `makeVoiceAssistantApiKp31`, and `makeVoiceAssistantApiD01` from there.
+- `updateD01Sys` / `updateD01IntSys` 会先调用对应 `*SysSetting`（只推 prop），再推讯飞资源与 APK 并重启；若只需换 `build.prop`/`build_out.prop`，直接用 `updateD01SysSetting` / `updateD01IntSysSetting`。
 - `voiceBtClick` supports `-s` device selection and tab completion. `soundBtClick` variants remain compatibility aliases.
 - `voiceBtClick` is the canonical implementation for the VoiceCommonService voice-button action.
 - Rename USB Dir variants now live in `common_script/`, are published by `update_scipt_all.sh`, and support case-insensitive Tab completion for command names plus current first-level directories under the configured USB mount point.
 - Virt Manager now lives in `common_script/`, is published by `update_scipt_all.sh`, and also installs an application launcher into `~/.local/share/applications` and the desktop.
 - `startWin10` starts libvirt VM `win10-pct` and opens virt-viewer; desktop/app shortcut name is `startWin10`. Case-insensitive Tab completion is provided by `startWin10_completion.sh`.
 - `closeWin10` shuts down `win10-pct` (graceful then force destroy) so qemu frees memory, closes virt-viewer, and installs desktop shortcut `closeWin10`. Case-insensitive Tab completion is provided by `closeWin10_completion.sh`.
-- Sync FileToUbuntu (`syncftu`) now lives in `common_script/`, is published by `update_scipt_all.sh`, supports case-insensitive Tab completion for command names, `-s` online-device completion, and accepts `--quiet` / `--fix-route`.
+- Sync FileToUbuntu (`syncftu`) and `fixVirbrRoute` now live in `common_script/` and are published by `update_scipt_all.sh`. `syncftu` supports case-insensitive Tab completion, `-s` online-device completion, and `--quiet` / `--fix-route`.
 - Legacy underscore-style shortcuts have been removed except where they are still intentionally published as compatibility aliases.
 - `shell_refresh_hooks.sh` is loaded from `~/.bashrc` when a new Bash shell starts; it does not publish scripts, but it does define helper update functions and immediately reload current completion definitions into the shell session.
 - `update_scipt_all.sh` is the actual publisher for local commands in `~/.local/bin`; it now only ensures the single `shell_refresh_hooks.sh` entry exists in `~/.bashrc`, and no longer writes per-completion source lines there.
 - If command names or symlink targets were just updated, run `hash -r`; if completion behavior was updated, run `source ~/.bashrc` or `reload_local_completions`.
 - `makeVoiceAssistantApiKp31` and `makeVoiceAssistantApiD01` accept either a full version like `1.8.7` or a 3-digit shorthand like `187` -> `1.8.7`, `211` -> `2.1.1`.
 - `makeVoiceAssistantApiKp31` and `makeVoiceAssistantApiD01` are local jar build helpers, so they do not support `-s`; connected-device Tab completion still applies to the voice deploy commands such as `voiceAssistant*` and `voiceSetting*`.
+- Request `.curl` 文件含登录 Cookie/Token，仅作本机请求模板；提交/推送前注意 GitHub Push Protection，勿把有效会话凭证推到公开仓库。
 
 ## Examples
 ```bash
@@ -417,6 +529,7 @@ killsystemui -s <device_serial>
 resetVat -s <device_serial>
 resetVst -s <device_serial>
 setSalesArea -s <device_serial> 7
+setUUIDKP31 -s <device_serial>
 startRandomlog -s <device_serial>
 pullLogcatByAdb -s <device_serial>
 clearLogcatByAdb -s <device_serial>
@@ -424,11 +537,18 @@ voiceBtClick -s <device_serial>
 soundBtClick -s <device_serial>
 startQnxD01
 startBootGuideKP31 -s <device_serial>
+startWin10
+closeWin10
 syncftu
 syncftu -s <device_serial>
 syncftu --fix-route
+fixVirbrRoute
 syncFileToUbuntu --quiet
 clearLogcatByAdb /data/log
+updateD01SysSetting -s <device_serial>
+updateD01IntSysSetting -s <device_serial>
+updateD01Sys -s <device_serial>
+updateD01IntSys -s <device_serial>
 updateIflytekResD01 -s <device_serial>
 updateIflytekResD01Int -s <device_serial>
 updateIflytekResKp31 -s <device_serial>
@@ -444,7 +564,7 @@ downloadJiraFiltered CHYKP31-1028
 downloadFeishu 7043211990
 FEISHU_COOKIE='session=...; meego_csrf_token=...; meego_local=28800' downloadfeishu 7043211990
 # If Feishu issue attachments are actually JIRA-history attachments, set FEISHU_ATTACHMENT_JIRA_COOKIE in download_feishu/download_feishu_config.sh.
-# Edit download_feishu/download_feishu_request.curl with the latest browser-exported issue-detail cURL, then run:
+# Edit the matching download_feishu/download_feishu_request_*.curl with the latest browser-exported issue-detail cURL, then run:
 downloadfeishu 7043211990
 downloadb 7043211990
 ```
