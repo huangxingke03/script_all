@@ -205,3 +205,122 @@ prepare_gradle_build() {
     ./gradlew assembleD
     echo "语音测试包打包完成"
 }
+
+ADB_CMD_TIMEOUT="${ADB_CMD_TIMEOUT:-20}"
+ADB_WAIT_TIMEOUT="${ADB_WAIT_TIMEOUT:-90}"
+ADB_REBOOT_WAIT_TIMEOUT="${ADB_REBOOT_WAIT_TIMEOUT:-180}"
+
+adb_cmd() {
+    local timeout_seconds="${1:-$ADB_CMD_TIMEOUT}"
+    shift
+    timeout "$timeout_seconds" adb -s "$DEVICE_SERIAL" "$@"
+}
+
+wait_for_device_online() {
+    local timeout_seconds="${1:-$ADB_WAIT_TIMEOUT}"
+
+    echo "等待设备重新上线: $DEVICE_SERIAL"
+    if ! adb_cmd "$timeout_seconds" wait-for-device; then
+        echo "错误: 等待设备上线超时 (${timeout_seconds} 秒): $DEVICE_SERIAL"
+        exit 1
+    fi
+}
+
+adbd_is_root() {
+    local uid
+
+    uid=$(adb_cmd "$ADB_CMD_TIMEOUT" shell id -u 2>/dev/null | tr -d '\r') || return 1
+    [ "$uid" = "0" ]
+}
+
+restart_adbd_as_root() {
+    if adbd_is_root; then
+        echo "adbd 已是 root，跳过 adb root"
+        return 0
+    fi
+
+    echo "正在执行 adb root"
+    if ! adb_cmd "$ADB_CMD_TIMEOUT" root; then
+        echo "错误: adb root 超时或失败，请检查 USB/adb 连接后重试"
+        exit 1
+    fi
+    wait_for_device_online
+}
+
+system_partition_is_writable() {
+    adb_cmd "$ADB_CMD_TIMEOUT" shell "touch $SYSTEM_RW_TEST_PATH && rm -f $SYSTEM_RW_TEST_PATH" >/dev/null 2>&1
+}
+
+device_blocks_system_remount() {
+    local props state flash_locked vbmeta
+
+    props=$(adb_cmd "$ADB_CMD_TIMEOUT" shell 'printf "%s\n" "$(getprop ro.boot.verifiedbootstate)" "$(getprop ro.boot.flash.locked)" "$(getprop ro.boot.vbmeta.device_state)"' 2>/dev/null | tr -d '\r') || return 1
+    state=$(printf '%s\n' "$props" | sed -n '1p')
+    flash_locked=$(printf '%s\n' "$props" | sed -n '2p')
+    vbmeta=$(printf '%s\n' "$props" | sed -n '3p')
+    [ "$state" = "green" ] || [ "$flash_locked" = "1" ] || [ "$vbmeta" = "locked" ]
+}
+
+remount_and_verify_system() {
+    local remount_output
+
+    echo "正在 remount /system"
+    remount_output=$(adb_cmd "$ADB_CMD_TIMEOUT" remount 2>&1 || true)
+    printf "%s\n" "$remount_output"
+    if system_partition_is_writable; then
+        return 0
+    fi
+
+    echo "adb remount 未放开 /system，尝试 remount /"
+    adb_shell_root "mount -o rw,remount / || mount -o rw,remount /system" >/dev/null 2>&1 || true
+    system_partition_is_writable
+}
+
+ensure_system_writable() {
+    local verity_output
+
+    if [ -z "${SYSTEM_RW_TEST_PATH:-}" ]; then
+        echo "错误: 未设置 SYSTEM_RW_TEST_PATH"
+        exit 1
+    fi
+
+    if system_partition_is_writable; then
+        echo "/system 已可写，跳过 remount"
+        return 0
+    fi
+
+    restart_adbd_as_root
+    if system_partition_is_writable || remount_and_verify_system; then
+        return 0
+    fi
+
+    if device_blocks_system_remount; then
+        echo "错误: 设备 bootloader 已锁定，/system 无法 remount，已跳过 disable-verity 和重启"
+        echo "当前为锁定的 user 版本，请换 userdebug/eng 或已解锁设备后再推系统分区"
+        exit 1
+    fi
+
+    echo "检测到 /system 仍为只读，尝试关闭 verity 并自动重启设备"
+    verity_output=$(adb_cmd "$ADB_CMD_TIMEOUT" disable-verity 2>&1 || true)
+    printf "%s\n" "$verity_output"
+    if printf '%s\n' "$verity_output" | grep -q "Device is locked"; then
+        echo "错误: disable-verity 返回设备已锁定，不再重启"
+        exit 1
+    fi
+
+    echo "重启设备以使 verity 设置生效"
+    adb_cmd "$ADB_CMD_TIMEOUT" reboot || true
+    wait_for_device_online "$ADB_REBOOT_WAIT_TIMEOUT"
+
+    restart_adbd_as_root
+    if system_partition_is_writable || remount_and_verify_system; then
+        return 0
+    fi
+
+    echo "错误: /system 仍然不可写，请确认设备为 userdebug/eng 且允许 remount"
+    exit 1
+}
+
+adb_shell_root() {
+    adb_cmd "$ADB_CMD_TIMEOUT" shell "$@"
+}

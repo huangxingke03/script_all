@@ -3,6 +3,7 @@
 DEVICE_SERIAL=""
 TARGET_BRANCH="al_chery-d01_dev2"
 REPO_DIR="/home/huangxingke/work/code/workCode/JETOUR_D01_IFLYTEK"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 usage() {
     echo "用法: $0 [-s device_serial]"
@@ -130,20 +131,7 @@ shift $((OPTIND - 1))
 
 ensure_device_ready
 
-echo "=== 开始推送 系统配置文件（/home/huangxingke/work/file/讯飞切换版本/build_replace/sh/build_out.prop 到
- /system/build.prop ） 到系统 ==="
-
-run_adb_root
-run_adb_remount
-ensure_target_branch
-
-echo "🗑️    删除旧的DATA缓存数据..."
-adb_cmd shell rm -rf /data/dalvik-cache/*
-adb_cmd shell rm -rf /data/system/package_cache/*
-
-echo "📤  推送新 系统配置文件..."
-adb_cmd push /home/huangxingke/work/file/讯飞切换版本/build_replace/sh/build_out.prop /system/build.prop
-adb_cmd shell sync
+"${SCRIPT_DIR}/update_d01_Int_sys_setting.sh" ${DEVICE_SERIAL:+-s "${DEVICE_SERIAL}"} || exit 1
 
 echo "=== 开始推送 讯飞资源 到系统 ==="
 

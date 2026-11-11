@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=closeWin10
+Name[zh_CN]=closeWin10
+GenericName=Stop Windows VM
+Comment=Shut down libvirt VM win10-pct and free memory
+Comment[zh_CN]=关闭 win10-pct 虚拟机并释放内存
+Exec=/home/huangxingke/.local/bin/closeWin10
+Icon=system-shutdown
+Terminal=false
+Categories=System;Utility;
+StartupNotify=true
+Keywords=win10;pct;vm;libvirt;closeWin10;shutdown;

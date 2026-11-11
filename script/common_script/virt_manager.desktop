@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Virt Manager
+Name[zh_CN]=虚拟机管理器
+Comment=Open virt-manager
+Comment[zh_CN]=打开 virt-manager
+Exec=/home/huangxingke/.local/bin/virtManager
+Icon=virt-manager
+Terminal=false
+Categories=System;Utility;
+StartupNotify=true
+Keywords=virt;libvirt;vm;

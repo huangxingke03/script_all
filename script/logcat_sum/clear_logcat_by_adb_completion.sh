@@ -12,6 +12,13 @@ _clear_logcat_by_adb_completion() {
 
     compopt +o default +o bashdefault 2>/dev/null
 
+
+    # 已输入完整 -s 但尚未空格时，先补出 -s（由 bash 加空格），下一次 Tab 再列设备
+    if [ "${cur,,}" = "-s" ] && [ "${prev,,}" != "-s" ]; then
+        COMPREPLY=("-s")
+        return 0
+    fi
+
     if [ "${prev}" = "-s" ]; then
         COMPREPLY=( $(collect_device_completion_replies "${cur}") )
         return 0
@@ -53,7 +60,7 @@ clear_logcat_by_adb_completion_repair() {
     done
 
     for command_name in "${commands[@]}"; do
-        complete -o nospace -F _clear_logcat_by_adb_completion "${command_name}"
+        complete -F _clear_logcat_by_adb_completion "${command_name}"
     done
 }
 

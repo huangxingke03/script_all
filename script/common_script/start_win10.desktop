@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=startWin10
+Name[zh_CN]=startWin10
+GenericName=Start Windows VM
+Comment=Start win10-pct; console can be minimized (VM keeps running)
+Comment[zh_CN]=启动 win10-pct；控制台可最小化/关闭，虚拟机继续后台运行
+Exec=/home/huangxingke/.local/bin/startWin10
+Icon=virt-viewer
+Terminal=false
+Categories=System;Utility;
+StartupNotify=false
+Keywords=win10;pct;vm;libvirt;flash;startWin10;

@@ -7,6 +7,8 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/download_feishu_config.sh"
 PROJECT_KEY="6a4c8fa0bcd74934733780cc"
+# 车型项目代号。项目字段 field_4586a9 存的是这个工作项 id，展示名要再查一次。
+VEHICLE_PROJECT_TYPE_KEY="680b4c0759f79bcc88bc809f"
 WORK_ITEM_TYPE="issue"
 ISSUE_ID="${1:-7043211990}"
 ISSUE_URL="https://project.feishu.cn/sb69eb/issue/detail/${ISSUE_ID}"
@@ -296,6 +298,8 @@ build_curl_auth_args() {
 }
 
 fetch_issue_json() {
+    local api_url="${1:-$ISSUE_API_URL}"
+
     curl -f -sS \
         -b "$FEISHU_COOKIE" \
         -H "accept: application/json, text/plain, */*" \
@@ -312,7 +316,7 @@ fetch_issue_json() {
         -H "x-meego-scope: workItemDetail" \
         -H "x-meego-source: web/release_train_1180306529026-1.0.5.7807" \
         -H "x-meego-timezone: 28800/28800" \
-        "$ISSUE_API_URL"
+        "$api_url"
 }
 
 build_target_request_url() {
@@ -487,26 +491,56 @@ extract_issue_project_name() {
     printf '%s' "$issue_json" | jq -r '
         def scalar_text:
             if type == "string" then .
-            elif type == "number" or type == "boolean" then tostring
+            elif type == "boolean" then tostring
             else empty
             end;
+        def useful_text:
+            select(type == "string" and length > 0 and . != "null" and . != "项目" and test("[A-Za-z]"));
+        def object_texts:
+            [
+                .label?,
+                .display_value?,
+                .display_name?,
+                .value?,
+                .text?,
+                .name?,
+                .option_label?,
+                .option_name?,
+                .cn_name?,
+                .en_name?
+            ]
+            | map(
+                if type == "string" or type == "boolean" then scalar_text
+                else empty
+                end
+            )
+            | map(useful_text);
         def first_scalar:
             if type == "array" then
-                map(
-                    if type == "object" then
-                        (.name // .label // .value // .text // .display_value // .display_name // empty) | scalar_text
-                    else
-                        scalar_text
-                    end
-                ) | map(select(length > 0)) | .[0] // empty
+                map(first_scalar) | map(select(length > 0)) | unique | join(" ")
             elif type == "object" then
-                (.name // .label // .value // .text // .display_value // .display_name // empty) | scalar_text
+                (object_texts | unique | join(" ")) as $direct
+                | if ($direct | length) > 0 then $direct
+                  else
+                      (.field_value? // .values? // .value? // empty) as $nested
+                      | if $nested == null or $nested == "" then empty
+                        else ($nested | first_scalar)
+                        end
+                  end
             else
                 scalar_text
             end;
         def project_key_match:
-            (.field_key? // .key? // .api_name? // .name? // .id? // empty) as $k
-            | ($k | tostring) == "jira_CHERY_PROJECT";
+            ((.field_key? // .key? // .api_name? // .name? // .id? // "") | tostring) == "jira_CHERY_PROJECT"
+            or ((.field_alias? // .alias? // "") | tostring) == "jira_CHERY_PROJECT"
+            or ((.field_key? // .key? // .api_name? // .id? // "") | tostring) == "field_4586a9"
+            or ((.field_key? // .key? // .api_name? // .id? // "") | tostring) == "field_286612"
+            or ((.field_name? // .display_name? // .name? // "") | tostring) == "项目"
+            or ((.field_name? // .display_name? // .name? // .label? // .title? // "") | tostring) == "缺陷编号"
+            or (
+                ((.label? // .title? // "") | tostring) == "项目"
+                and (has("field_value") or has("field_key") or has("field_alias") or has("api_name") or has("value") or has("key"))
+            );
         def project_value:
             (
                 .field_value?
@@ -517,24 +551,42 @@ extract_issue_project_name() {
                 // .display_value?
                 // .display_name?
                 // .field_value_map?.jira_CHERY_PROJECT?
+                // .field_value_map?.field_4586a9?
                 // .jira_CHERY_PROJECT?
+                // .field_4586a9?
+                // .field_286612?
                 // empty
             );
 
         [
-            .. | objects | .jira_CHERY_PROJECT?,
-            .. | objects | .field_value_map?.jira_CHERY_PROJECT?,
-            .. | objects | select(project_key_match) | project_value,
-            .. | objects | .fields?.jira_CHERY_PROJECT?,
-            .. | objects | .custom_fields?.jira_CHERY_PROJECT?,
-            .. | objects | .custom_field_values?.jira_CHERY_PROJECT?,
-            .. | objects | .field_alias_map?.jira_CHERY_PROJECT?,
-            .. | objects | select(has("field_value_map")) | .field_value_map | to_entries[]? | select(.key == "jira_CHERY_PROJECT") | .value,
-            .. | objects | .items[]? | select(project_key_match) | project_value
+            (.. | objects | .jira_CHERY_PROJECT?),
+            (.. | objects | .field_value_map?.jira_CHERY_PROJECT?),
+            (.. | objects | .field_4586a9?),
+            (.. | objects | .field_value_map?.field_4586a9?),
+            (.. | objects | .field_286612?),
+            (.. | objects | .field_value_map?.field_286612?),
+            (.. | objects | select(project_key_match) | project_value),
+            (.. | objects | .fields?.jira_CHERY_PROJECT?),
+            (.. | objects | .fields?.field_4586a9?),
+            (.. | objects | .custom_fields?.jira_CHERY_PROJECT?),
+            (.. | objects | .custom_fields?.field_4586a9?),
+            (.. | objects | .custom_field_values?.jira_CHERY_PROJECT?),
+            (.. | objects | .custom_field_values?.field_4586a9?),
+            (.. | objects | .field_alias_map?.jira_CHERY_PROJECT?),
+            (.. | objects | select(has("field_value_map")) | .field_value_map | to_entries[]? | select(.key == "jira_CHERY_PROJECT" or .key == "field_4586a9" or .key == "field_286612") | .value),
+            (.. | objects | .items[]? | select(project_key_match) | project_value),
+            (.. | objects | select(((.field_name? // .display_name? // .name? // empty) | tostring) == "项目") | project_value),
+            (.. | objects | .items[]? | select(((.field_name? // .display_name? // .name? // empty) | tostring) == "项目") | project_value),
+            (.. | objects | select(((.field_name? // .display_name? // .name? // .label? // .title? // empty) | tostring) == "缺陷编号") | project_value),
+            .data.field_4586a9?,
+            .data.for_leopard.field_4586a9?,
+            .data.field_286612?,
+            .data.for_leopard.field_286612?
         ]
         | map(first_scalar)
-        | map(select(type == "string" and length > 0 and . != "null"))
-        | .[0] // empty
+        | map(useful_text)
+        | unique
+        | join(" ")
     ' 2>/dev/null | head -n 1
 }
 
@@ -543,16 +595,30 @@ extract_issue_project_debug_snippets() {
 
     printf '%s' "$issue_json" | jq -c '
         def project_key_match:
-            (.field_key? // .key? // .api_name? // .name? // .id? // empty) as $k
-            | ($k | tostring) == "jira_CHERY_PROJECT";
+            ((.field_key? // .key? // .api_name? // .name? // .id? // "") | tostring) == "jira_CHERY_PROJECT"
+            or ((.field_alias? // .alias? // "") | tostring) == "jira_CHERY_PROJECT"
+            or ((.field_key? // .key? // .api_name? // .id? // "") | tostring) == "field_4586a9"
+            or ((.field_key? // .key? // .api_name? // .id? // "") | tostring) == "field_286612"
+            or ((.field_name? // .display_name? // .name? // "") | tostring) == "项目"
+            or ((.field_name? // .display_name? // .name? // .label? // .title? // "") | tostring) == "缺陷编号"
+            or (
+                ((.label? // .title? // "") | tostring) == "项目"
+                and (has("field_value") or has("field_key") or has("field_alias") or has("api_name") or has("value") or has("key"))
+            );
 
         [
-            .. | objects | select(has("jira_CHERY_PROJECT")) | {path_hint: "jira_CHERY_PROJECT", value: .jira_CHERY_PROJECT},
-            .. | objects | select(.field_value_map?.jira_CHERY_PROJECT? != null) | {path_hint: "field_value_map.jira_CHERY_PROJECT", value: .field_value_map.jira_CHERY_PROJECT},
-            .. | objects | select(project_key_match) | {
-                path_hint: (.field_key? // .key? // .api_name? // .name? // .id? // "jira_CHERY_PROJECT"),
-                value: (.field_value? // .value? // .values? // .text? // .name? // .display_value? // .display_name? // .field_value_map?.jira_CHERY_PROJECT? // .jira_CHERY_PROJECT? // empty)
-            }
+            (.. | objects | select(has("jira_CHERY_PROJECT")) | {path_hint: "jira_CHERY_PROJECT", value: .jira_CHERY_PROJECT}),
+            (.. | objects | select(.field_value_map?.jira_CHERY_PROJECT? != null) | {path_hint: "field_value_map.jira_CHERY_PROJECT", value: .field_value_map.jira_CHERY_PROJECT}),
+            (.. | objects | select(has("field_4586a9")) | {path_hint: "field_4586a9", value: .field_4586a9}),
+            (.. | objects | select(has("field_286612")) | {path_hint: "field_286612", value: .field_286612}),
+            (.. | objects | select(project_key_match) | {
+                path_hint: (.field_key? // .key? // .api_name? // .field_alias? // .field_name? // .name? // .id? // "jira_CHERY_PROJECT"),
+                value: (.field_value? // .value? // .values? // .text? // .name? // .display_value? // .display_name? // .field_value_map?.jira_CHERY_PROJECT? // .jira_CHERY_PROJECT? // .field_4586a9? // .field_286612? // empty)
+            }),
+            (.. | objects | select(((.field_name? // .display_name? // .name? // empty) | tostring) == "项目") | {
+                path_hint: (.field_key? // .field_alias? // .field_name? // .display_name? // .name? // "项目"),
+                value: (.field_value? // .value? // .values? // .text? // .name? // .display_value? // .display_name? // empty)
+            })
         ]
         | map(select(.value != null))
         | .[:8]
@@ -657,8 +723,8 @@ detect_project_name_from_text() {
 
     upper_text=$(printf '%s' "$source_text" | tr '[:lower:]' '[:upper:]')
 
-    # Match standalone platform tags and variants such as CHY_KP31, CHERY_KP31_BUG, or D01-FL1.
-    if [[ "$upper_text" =~ (^|[^A-Z0-9])(KP31_INT|KP31|D01-FL1|D01)([^A-Z0-9]|$) ]]; then
+    # Match standalone platform tags and variants such as CHY_KP31, CHERY_KP31_BUG, D01-FL1, or D01-P/D01P.
+    if [[ "$upper_text" =~ (^|[^A-Z0-9])(KP31_INT|KP31|D01-FL1|D01FL1|D01_FL1|D01-P|D01P|D01)([^A-Z0-9]|$) ]]; then
         printf '%s
 ' "${BASH_REMATCH[2]}"
         return 0
@@ -727,6 +793,16 @@ extract_project_name_from_version() {
     local upper_version prefix
 
     upper_version=$(printf '%s' "$software_version" | tr '[:lower:]' '[:upper:]')
+    if [[ "$upper_version" =~ (^|[^A-Z0-9])(D01-FL1|D01FL1|D01_FL1)([^A-Z0-9]|$) ]]; then
+        printf 'D01-FL1
+'
+        return 0
+    fi
+    if [[ "$upper_version" =~ (^|[^A-Z0-9])(D01-P|D01P)([^A-Z0-9]|$) ]]; then
+        printf 'D01-P
+'
+        return 0
+    fi
     if [[ "$upper_version" =~ ^([A-Z0-9]+)_ ]]; then
         prefix="${BASH_REMATCH[1]}"
         case "$prefix" in
@@ -737,6 +813,11 @@ extract_project_name_from_version() {
                 ;;
             KP31INT)
                 printf 'KP31_INT
+'
+                return 0
+                ;;
+            D01P)
+                printf 'D01-P
 '
                 return 0
                 ;;
@@ -763,8 +844,13 @@ normalize_project_name() {
 '
             return 0
             ;;
-        *D01-FL1*)
+        *D01-FL1*|*D01FL1*|*D01_FL1*)
             printf 'D01-FL1
+'
+            return 0
+            ;;
+        *D01-P*|*D01P*)
+            printf 'D01-P
 '
             return 0
             ;;
@@ -832,16 +918,135 @@ extract_issue_text_fallback() {
     ' 2>/dev/null
 }
 
+adapt_right_hand_project_name() {
+    local source_text="$1"
+    local upper_text token
+
+    upper_text=$(printf '%s' "$source_text" | tr '[:lower:]' '[:upper:]')
+    if [[ "$upper_text" != *-RIGHT* && "$upper_text" != *_RIGHT* && "$source_text" != *右舵* ]]; then
+        return 1
+    fi
+
+    # 右舵项目名来自项目字段本身，例如 CHERY-D01-P-INT-RIGHT，只去掉 CHERY 前缀。
+    if [[ "$upper_text" =~ (^|[^A-Z0-9])((CHERY[-_])?[A-Z0-9]+(-[A-Z0-9]+)*-RIGHT)([^A-Z0-9]|$) ]]; then
+        token="${BASH_REMATCH[2]}"
+        token="${token#CHERY-}"
+        token="${token#CHERY_}"
+        printf '%s
+' "$token"
+        return 0
+    fi
+
+    return 1
+}
+
+resolve_vehicle_project_name() {
+    local issue_json="$1"
+    local project_id rel_json rel_name api_url
+
+    project_id=$(printf '%s' "$issue_json" | jq -r '
+        [
+            .data.field_4586a9?,
+            .data.for_leopard.field_4586a9?,
+            .data.field_value_map?.field_4586a9?
+        ]
+        | map(
+            if type == "number" then tostring
+            elif type == "string" then .
+            elif type == "object" then (.name // .label // .display_value // .value // empty)
+            else empty
+            end
+        )
+        | map(select(type == "string" and length > 0 and . != "null"))
+        | .[0] // empty
+    ' 2>/dev/null | head -n 1)
+
+    [ -n "$project_id" ] || return 1
+
+    if [[ ! "$project_id" =~ ^[0-9]+$ ]]; then
+        printf '%s\n' "$project_id"
+        return 0
+    fi
+
+    [ -n "$PROJECT_KEY" ] || return 1
+    api_url="https://project.feishu.cn/goapi/v2/projects/${PROJECT_KEY}/work_item/${VEHICLE_PROJECT_TYPE_KEY}/${project_id}?"
+    rel_json=$(fetch_issue_json "$api_url" 2>/dev/null || true)
+    rel_name=$(printf '%s' "$rel_json" | jq -r '.data.name // empty' 2>/dev/null | head -n 1)
+    [ -n "$rel_name" ] || return 1
+    printf '%s\n' "$rel_name"
+}
+
+adapt_latest_project_prefix() {
+    local source_text="$1"
+    local upper
+
+    [ -n "$source_text" ] || return 1
+    upper=$(printf '%s' "$source_text" | tr '[:lower:]' '[:upper:]')
+
+    # 只兼容最新项目参数。原有 D01 / D01-FL1 / D01-P / KP31 / KP31_INT / 右舵规则不走这里。
+    if [[ "$upper" =~ (^|[^A-Z0-9])(D01-FL1-INT|D01_FL1_INT|D01FL1INT)([^A-Z0-9]|$) ]]; then
+        printf 'D01-FL1-INT\n'
+        return 0
+    fi
+
+    return 1
+}
+
+choose_issue_project_name() {
+    local issue_json="$1"
+    local related prefix inferred
+
+    related=$(resolve_vehicle_project_name "$issue_json" || true)
+    if [ -n "$related" ]; then
+        RELATED_PROJECT_NAME="$related"
+        if prefix=$(adapt_latest_project_prefix "$related"); then
+            ISSUE_PROJECT_NAME="$prefix"
+            return 0
+        fi
+    fi
+
+    inferred=$(infer_issue_project_name "$issue_json" || true)
+    if [ -n "$inferred" ]; then
+        ISSUE_PROJECT_NAME="$inferred"
+        return 0
+    fi
+    return 1
+}
+
 infer_issue_project_name() {
     local issue_json="$1"
-    local project_name title_text fallback_text upper_text software_version defect_type
+    local project_name title_text fallback_text upper_text software_version defect_type detected
 
     project_name=$(extract_issue_project_name "$issue_json")
     if [ -n "$project_name" ]; then
+        if detected=$(adapt_right_hand_project_name "$project_name"); then
+            printf '%s
+' "$detected"
+            return 0
+        fi
+        if detected=$(detect_project_name_from_text "$project_name"); then
+            printf '%s
+' "$(normalize_project_name "$detected")"
+            return 0
+        fi
         project_name=$(normalize_project_name "$project_name")
-        printf '%s
+        case "$project_name" in
+            KP31_INT|KP31|D01-FL1|D01-P|D01)
+                printf '%s
 ' "$project_name"
-        return 0
+                return 0
+                ;;
+        esac
+    fi
+
+    defect_number=$(extract_issue_defect_number "$issue_json")
+    if [ -n "$defect_number" ]; then
+        if project_name=$(detect_project_name_from_text "$defect_number"); then
+            project_name=$(normalize_project_name "$project_name")
+            printf '%s
+' "$project_name"
+            return 0
+        fi
     fi
 
     software_version=$(extract_issue_software_version "$issue_json")
@@ -854,7 +1059,7 @@ infer_issue_project_name() {
 
     title_text=$(extract_issue_title "$issue_json")
     upper_text=$(printf '%s' "$title_text" | tr '[:lower:]' '[:upper:]')
-    if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01-FL1|D01)[\]】] ]]; then
+    if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01-FL1|D01FL1|D01_FL1|D01-P|D01P|D01)[\]】] ]]; then
         project_name=$(normalize_project_name "${BASH_REMATCH[1]}")
         printf '%s
 ' "$project_name"
@@ -869,7 +1074,7 @@ infer_issue_project_name() {
 
     fallback_text=$(extract_issue_text_fallback "$issue_json")
     upper_text=$(printf '%s' "$fallback_text" | tr '[:lower:]' '[:upper:]')
-    if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01-FL1|D01)[\]】] ]]; then
+    if [[ "$upper_text" =~ [\[【](KP31_INT|KP31|D01-FL1|D01FL1|D01_FL1|D01-P|D01P|D01)[\]】] ]]; then
         project_name=$(normalize_project_name "${BASH_REMATCH[1]}")
         printf '%s
 ' "$project_name"
@@ -882,7 +1087,7 @@ infer_issue_project_name() {
         return 0
     fi
 
-    for candidate in KP31_INT KP31 D01-FL1 D01; do
+    for candidate in KP31_INT KP31 D01-FL1 D01FL1 D01_FL1 D01-P D01P D01; do
         if [[ "$upper_text" == *"$candidate"* ]]; then
             project_name=$(normalize_project_name "$candidate")
             printf '%s
@@ -932,7 +1137,7 @@ build_save_dir() {
 should_show_progress() {
     local lower_name="${1,,}"
     case "$lower_name" in
-        *.zip|*.z[0-9][0-9]|*.tar.gz|*.tgz|*.7z|*.[0-9][0-9][0-9]|*.rar|*.r[0-9][0-9]|*.part[0-9]*.rar|*.log|*.mp4|*.mov|*.mkv|*.txt)
+        *.zip|*.z[0-9][0-9]|*.tar.gz|*.tgz|*.7z|*.[0-9][0-9][0-9]|*.rar|*.r[0-9][0-9]|*.part[0-9]*.rar|*.log|*.log.gz|*.mp4|*.mov|*.mkv|*.txt|*.hprof)
             return 0
             ;;
         *)
@@ -1029,83 +1234,129 @@ build_progress_bar() {
     printf '[%s%s]' "$bar_filled" "$bar_empty"
 }
 
+build_curl_transfer_args() { CURL_TRANSFER_ARGS=(--fail --silent --show-error --location --continue-at - --retry 3 --retry-delay 1); }
+
+format_duration() {
+    local seconds="$1"
+    local hours minutes secs
+
+    seconds=${seconds:-0}
+    [ "$seconds" -lt 0 ] && seconds=0
+    hours=$(( seconds / 3600 ))
+    minutes=$(( (seconds % 3600) / 60 ))
+    secs=$(( seconds % 60 ))
+
+    if [ "$hours" -gt 0 ]; then
+        printf '%d小时%02d分%02d秒' "$hours" "$minutes" "$secs"
+    elif [ "$minutes" -gt 0 ]; then
+        printf '%d分%02d秒' "$minutes" "$secs"
+    else
+        printf '%d秒' "$secs"
+    fi
+}
+
 download_with_progress() {
     local url="$1"
     local filepath="$2"
     local remote_size="$3"
-    local pid current_size percent progress_bar status line display_size tick=0
+    local pid current_size percent status line display_size tick=0 attempt=0 max_attempts=5 start_time elapsed_time
+    local downloaded_size remaining_size
 
     build_curl_auth_args "$url" || return 1
+    start_time=$(date +%s)
 
-    : > "$filepath"
-    curl -f -sS \
-        "${CURL_AUTH_ARGS[@]}" \
-        -L -o "$filepath" "$url" &
-    pid=$!
+    while :; do
+        if [ ! -f "$filepath" ]; then
+            : > "$filepath"
+        fi
 
-    while kill -0 "$pid" 2>/dev/null; do
+        build_curl_transfer_args
+
+        curl \
+            "${CURL_TRANSFER_ARGS[@]}" \
+            "${CURL_AUTH_ARGS[@]}" \
+            -o "$filepath" \
+            "$url" &
+        pid=$!
+
+        while kill -0 "$pid" 2>/dev/null; do
+            current_size=$(stat -c%s "$filepath" 2>/dev/null || echo 0)
+            display_size="$current_size"
+            elapsed_time=$(( $(date +%s) - start_time ))
+
+            if [[ "$remote_size" =~ ^[0-9]+$ ]] && [ "$remote_size" -gt 0 ]; then
+                if [ "$display_size" -gt "$remote_size" ]; then
+                    display_size="$remote_size"
+                fi
+                percent=$(( display_size * 100 / remote_size ))
+                if [ "$percent" -gt 100 ]; then
+                    percent=100
+                fi
+                downloaded_size=$(format_size "$display_size")
+                remaining_size=$(( remote_size - display_size ))
+                [ "$remaining_size" -lt 0 ] && remaining_size=0
+                line="   进度: ${percent}% | 已下载: ${downloaded_size} | 剩余: $(format_size "$remaining_size") | 下载时间: $(format_duration "$elapsed_time")"
+            else
+                percent=$(( tick % 100 ))
+                downloaded_size=$(format_size "$display_size")
+                line="   进度: ${percent}% | 已下载: ${downloaded_size} | 剩余: 未知 | 下载时间: $(format_duration "$elapsed_time")"
+            fi
+
+            printf '\r\033[2K%s' "$line"
+            tick=$(( tick + 1 ))
+            sleep 1
+        done
+
+        wait "$pid"
+        status=$?
         current_size=$(stat -c%s "$filepath" 2>/dev/null || echo 0)
         display_size="$current_size"
-        line="   已下载大小: $(format_size "$current_size")"
+        elapsed_time=$(( $(date +%s) - start_time ))
 
         if [[ "$remote_size" =~ ^[0-9]+$ ]] && [ "$remote_size" -gt 0 ]; then
-            if [ "$display_size" -gt "$remote_size" ]; then
+            if [ "$status" -eq 0 ]; then
+                current_size="$remote_size"
                 display_size="$remote_size"
-            fi
-            percent=$(( display_size * 100 / remote_size ))
-            if [ "$percent" -gt 100 ]; then
                 percent=100
+            else
+                if [ "$display_size" -gt "$remote_size" ]; then
+                    display_size="$remote_size"
+                fi
+                percent=$(( display_size * 100 / remote_size ))
+                if [ "$percent" -gt 100 ]; then
+                    percent=100
+                fi
             fi
-            progress_bar=$(build_progress_bar "$percent")
-            line+=" / 总大小: $(format_size "$remote_size") ${progress_bar} (${percent}%)"
+            downloaded_size=$(format_size "$display_size")
+            remaining_size=$(( remote_size - display_size ))
+            [ "$remaining_size" -lt 0 ] && remaining_size=0
+            line="   进度: ${percent}% | 已下载: ${downloaded_size} | 剩余: $(format_size "$remaining_size") | 下载时间: $(format_duration "$elapsed_time")"
         else
-            percent=$(( tick % 100 ))
-            progress_bar=$(build_progress_bar "$percent")
-            line+=" ${progress_bar} (${percent}%)"
+            if [ "$status" -eq 0 ]; then
+                percent=100
+            else
+                percent=$(( tick % 100 ))
+            fi
+            downloaded_size=$(format_size "$display_size")
+            line="   进度: ${percent}% | 已下载: ${downloaded_size} | 剩余: 未知 | 下载时间: $(format_duration "$elapsed_time")"
         fi
 
-        printf '\r\033[2K%s' "$line"
-        tick=$(( tick + 1 ))
+        printf '\r\033[2K%s\n' "$line"
+        if [ "$status" -eq 0 ]; then
+            return 0
+        fi
+
+        attempt=$(( attempt + 1 ))
+        if [ "$attempt" -ge "$max_attempts" ]; then
+            return "$status"
+        fi
+        echo "   连接中断，尝试续传... ($attempt/$max_attempts)"
         sleep 1
     done
-
-    wait "$pid"
-    status=$?
-    current_size=$(stat -c%s "$filepath" 2>/dev/null || echo 0)
-    display_size="$current_size"
-    line="   已下载大小: $(format_size "$current_size")"
-
-    if [[ "$remote_size" =~ ^[0-9]+$ ]] && [ "$remote_size" -gt 0 ]; then
-        if [ "$status" -eq 0 ]; then
-            current_size="$remote_size"
-            display_size="$remote_size"
-            percent=100
-        else
-            if [ "$display_size" -gt "$remote_size" ]; then
-                display_size="$remote_size"
-            fi
-            percent=$(( display_size * 100 / remote_size ))
-            if [ "$percent" -gt 100 ]; then
-                percent=100
-            fi
-        fi
-        progress_bar=$(build_progress_bar "$percent")
-        line="   已下载大小: $(format_size "$current_size") / 总大小: $(format_size "$remote_size") ${progress_bar} (${percent}%)"
-    else
-        if [ "$status" -eq 0 ]; then
-            percent=100
-        else
-            percent=$(( tick % 100 ))
-        fi
-        progress_bar=$(build_progress_bar "$percent")
-        line+=" ${progress_bar} (${percent}%)"
-    fi
-
-    printf '\r\033[2K%s\n' "$line"
-    return "$status"
 }
 
 downloaded_file_is_login_page() {
+
     local filepath="$1"
     [ -s "$filepath" ] || return 1
 
@@ -1135,13 +1386,17 @@ download_attachment() {
         download_with_progress "$url" "$filepath" "$remote_size"
     else
         build_curl_auth_args "$url" || return 1
-        curl -f -sS \
+        build_curl_transfer_args
+        curl \
+            "${CURL_TRANSFER_ARGS[@]}" \
             "${CURL_AUTH_ARGS[@]}" \
-            -L -o "$filepath" "$url"
+            -o "$filepath" \
+            "$url"
     fi
 }
 
 should_skip_filtered_attachment() {
+
     local filename="$1"
     local lower_name="${filename,,}"
 
@@ -1155,6 +1410,39 @@ should_skip_filtered_attachment() {
             return 1
             ;;
     esac
+}
+
+# downloadFeishuFliter only: for *.hprof, if the target name already exists,
+# keep accumulating a numeric suffix (name1.hprof, name2.hprof, ...) instead of
+# overwriting. First copy keeps the original name. Other attachments unchanged.
+allocate_hprof_save_filename() {
+    local save_dir="$1"
+    local filename="$2"
+    local base n candidate
+
+    [ "${FEISHU_FILTER_SKIP_SPECIAL}" = "1" ] || {
+        printf '%s\n' "$filename"
+        return 0
+    }
+    [[ "${filename,,}" == *.hprof ]] || {
+        printf '%s\n' "$filename"
+        return 0
+    }
+
+    candidate="$filename"
+    if [ ! -e "${save_dir}/${candidate}" ]; then
+        printf '%s\n' "$candidate"
+        return 0
+    fi
+
+    base="${filename:0:$((${#filename} - 6))}"
+    n=1
+    candidate="${base}${n}.hprof"
+    while [ -e "${save_dir}/${candidate}" ]; do
+        n=$((n + 1))
+        candidate="${base}${n}.hprof"
+    done
+    printf '%s\n' "$candidate"
 }
 
 is_supported_archive() {
@@ -1172,6 +1460,7 @@ is_supported_archive() {
 render_extract_progress() {
     local current="$1"
     local total="$2"
+    local label="${3:-解压进度}"
     local width=24
     local filled=0
     local percent=0
@@ -1185,7 +1474,7 @@ render_extract_progress() {
     bar=$(printf '%*s' "$filled" '')
     bar=${bar// /#}
     bar=$(printf '%-*s' "$width" "$bar")
-    printf '\r\033[2K解压进度: [%s] %d%% (%d/%d)' "$bar" "$percent" "$current" "$total"
+    printf '\r\033[2K%s: [%s] %d%% (%d/%d)' "$label" "$bar" "$percent" "$current" "$total"
 }
 
 extract_one_archive() {
@@ -1208,7 +1497,12 @@ extract_one_archive() {
         *.001) archive_stem="${archive_name%.001}" ;;
     esac
 
-    extract_target_dir="${archive_dir}/${archive_stem}"
+    group_prefix=""
+    if group_prefix=$(top_level_group_prefix "$archive_stem"); then
+        extract_target_dir="${archive_dir}/${group_prefix}"
+    else
+        extract_target_dir="${archive_dir}/${archive_stem}"
+    fi
     mkdir -p "$extract_target_dir"
 
     case "$lower_name" in
@@ -1219,7 +1513,7 @@ extract_one_archive() {
                 [ -f "$c" ] && has_companion=true && break
             done
             if $has_companion; then
-                ( cd "$archive_dir" && 7z x -y -aoa "-o$extract_target_dir" "$archive_name" ) >/dev/null 2>&1
+                ( cd "$archive_dir" && 7z x -y -aoa -o"$extract_target_dir" -- "$archive_name" ) >/dev/null 2>&1
             else
                 unzip -o "$f" -d "$extract_target_dir" >/dev/null 2>&1
             fi
@@ -1228,22 +1522,22 @@ extract_one_archive() {
             tar -xzf "$f" -C "$extract_target_dir" >/dev/null 2>&1
             ;;
         *.001)
-            if ( cd "$archive_dir" && 7z x -y -aoa "-o$extract_target_dir" "$archive_name" ) >/dev/null 2>&1; then
+            if ( cd "$archive_dir" && 7z x -y -aoa -o"$extract_target_dir" -- "$archive_name" ) >/dev/null 2>&1; then
                 :
             elif command -v unar >/dev/null 2>&1 && ( cd "$archive_dir" && unar -force-overwrite -output-directory "$extract_target_dir" "$archive_name" ) >/dev/null 2>&1; then
                 :
             else
-                ( cd "$archive_dir" && 7z x -y -aoa "-o$extract_target_dir" "$archive_name" ) 2>&1 | tail -n 20
+                ( cd "$archive_dir" && 7z x -y -aoa -o"$extract_target_dir" -- "$archive_name" ) 2>&1 | tail -n 20
                 return 1
             fi
             ;;
         *.7z)
-            if ( cd "$archive_dir" && 7z x -y -aoa "-o$extract_target_dir" "$archive_name" ) >/dev/null 2>&1; then
+            if ( cd "$archive_dir" && 7z x -y -aoa -o"$extract_target_dir" -- "$archive_name" ) >/dev/null 2>&1; then
                 :
             elif command -v unar >/dev/null 2>&1 && ( cd "$archive_dir" && unar -force-overwrite -output-directory "$extract_target_dir" "$archive_name" ) >/dev/null 2>&1; then
                 :
             else
-                ( cd "$archive_dir" && 7z x -y -aoa "-o$extract_target_dir" "$archive_name" ) 2>&1 | tail -n 20
+                ( cd "$archive_dir" && 7z x -y -aoa -o"$extract_target_dir" -- "$archive_name" ) 2>&1 | tail -n 20
                 return 1
             fi
             ;;
@@ -1293,7 +1587,7 @@ extract_archives_recursively() {
             fi
             [[ -n "${extracted_archives_seen[$rel_path]}" ]] && continue
             pending_archives+=("$archive_path")
-        done < <(find . -type f \( -iname "*.zip" -o -iname "*.tar.gz" -o -iname "*.tgz" -o -iname "*.7z" -o -iname "*.001" -o -iname "*.rar" \) -print0)
+        done < <(find . -type f \( -iname "*.zip" -o -iname "*.tar.gz" -o -iname "*.tgz" -o -iname "*.7z" -o -iname "*.001" -o -iname "*.rar" \) -print0 2>/dev/null)
 
         [ "${#pending_archives[@]}" -gt 0 ] || break
         total_archives=$((completed_archives + ${#pending_archives[@]}))
@@ -1318,34 +1612,87 @@ extract_archives_recursively() {
 }
 
 
+extract_gzip_logs() {
+    local gzip_path
+    local total=0
+    local current=0
+    local success=0
+    local fail=0
+
+    total=$(find . -type f -iname "*.log.gz" -printf '.' 2>/dev/null | wc -c)
+    [ "$total" -gt 0 ] || return 0
+
+    while IFS= read -r -d '' gzip_path; do
+        if gzip -dkf -- "$gzip_path" >/dev/null 2>&1; then
+            success=$((success + 1))
+        else
+            fail=$((fail + 1))
+            printf '\n' >&2
+            echo "解压失败: ${gzip_path#./}" >&2
+        fi
+        current=$((current + 1))
+        render_extract_progress "$current" "$total" "解压 gzip 日志"
+    done < <(find . -type f -iname "*.log.gz" -print0 2>/dev/null)
+
+    printf '\n'
+    if [ "$fail" -gt 0 ]; then
+        echo "gzip 日志解压完成: 成功 ${success}, 失败 ${fail}"
+    else
+        echo "gzip 日志解压完成: ${success} 个"
+    fi
+}
+
+# Qcore-00000000-2026-09-16_15-51-30 -> Qcore
+# Audio-00000000-...（即使只有一份）-> Audio
+# sm52_20260916_144046 -> sm52
+top_level_group_prefix() {
+    local name="$1"
+    if [[ "$name" =~ ^([A-Za-z][A-Za-z0-9]*)-[0-9]{4,} ]]; then
+        printf '%s' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+    if [[ "$name" =~ ^([A-Za-z][A-Za-z0-9]*)_[0-9]{8}_ ]]; then
+        printf '%s' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+    return 1
+}
+
 rehome_top_level_groups() {
-    local entry name prefix parent count
-    declare -A prefix_counts=()
+    local entry name prefix dest nested moved=0
 
     while IFS= read -r -d '' entry; do
         [ -d "$entry" ] || continue
         name=$(basename "$entry")
-        if [[ "$name" =~ ^([A-Za-z][A-Za-z0-9]*)-[0-9]{4,} ]]; then
-            prefix="${BASH_REMATCH[1]}"
+        prefix=$(top_level_group_prefix "$name") || continue
+        dest="$SAVE_DIR/$prefix"
+        case "$entry" in
+            "$dest"|"$dest"/*) continue ;;
+        esac
+        mkdir -p "$dest"
+        if [ -e "$dest/$name" ]; then
+            find "$entry" -mindepth 1 -maxdepth 1 -exec mv -n {} "$dest/" \;
+            rmdir "$entry" 2>/dev/null || rm -rf "$entry"
         else
-            continue
+            mv -n "$entry" "$dest/"
         fi
-        prefix_counts["$prefix"]=$(( ${prefix_counts["$prefix"]:-0} + 1 ))
-    done < <(find "$SAVE_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
+        moved=$((moved + 1))
+    done < <(find "$SAVE_DIR" -depth -type d -print0)
 
-    for prefix in "${!prefix_counts[@]}"; do
-        count=${prefix_counts[$prefix]}
-        [ "$count" -lt 2 ] && continue
-        parent="$SAVE_DIR/$prefix"
-        mkdir -p "$parent"
-        while IFS= read -r -d '' entry; do
-            [ -d "$entry" ] || continue
-            name=$(basename "$entry")
-            if [[ "$name" =~ ^${prefix}-[0-9]{4,} ]]; then
-                mv -n "$entry" "$parent/"
-            fi
-        done < <(find "$SAVE_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
-    done
+    while IFS= read -r -d '' nested; do
+        [ -d "$nested" ] || continue
+        name=$(basename "$nested")
+        dest="$SAVE_DIR/$name"
+        [ "$nested" = "$dest" ] && continue
+        [ -d "$dest" ] || continue
+        find "$nested" -mindepth 1 -maxdepth 1 -exec mv -n {} "$dest/" \;
+        rmdir "$nested" 2>/dev/null || true
+        moved=$((moved + 1))
+    done < <(find "$SAVE_DIR" -mindepth 2 -maxdepth 2 -type d -print0)
+
+    if [ "$moved" -gt 0 ]; then
+        echo "已收拢 ${moved} 个日志目录到前缀分组"
+    fi
 }
 
 fix_logcat_permissions() {
@@ -1355,7 +1702,7 @@ fix_logcat_permissions() {
         chmod -R 755 "$dir"
         echo "🔧 已修正 logcat 目录权限: ${dir#./} -> 755"
         found=1
-    done < <(find . -type d -name 'logcat' -print0)
+    done < <(find . -type d -name 'logcat' -print0 2>/dev/null)
 
     [ "$found" -eq 1 ] || return 0
 }
@@ -1389,7 +1736,9 @@ if ! printf '%s' "$ISSUE_JSON" | jq -e . >/dev/null 2>&1; then
     exit 1
 fi
 
-ISSUE_PROJECT_NAME=$(infer_issue_project_name "$ISSUE_JSON")
+RELATED_PROJECT_NAME=""
+ISSUE_PROJECT_NAME=""
+choose_issue_project_name "$ISSUE_JSON" || true
 ISSUE_PROJECT_DEBUG=$(extract_issue_project_debug_snippets "$ISSUE_JSON")
 if [ -z "$ISSUE_PROJECT_NAME" ]; then
     # Some issue payloads expose the software version only on the detail body.
@@ -1431,7 +1780,7 @@ if [ -n "$EXPORTED_REQUEST_JSON_URL" ] && [ "$EXPORTED_REQUEST_JSON_URL" != "$IS
 
         # Keep the original naming flow; only fall back to the exported detail/log payload when the work-item API has no project hint.
         if [ -z "$ISSUE_PROJECT_NAME" ]; then
-            ISSUE_PROJECT_NAME=$(infer_issue_project_name "$EXPORTED_REQUEST_JSON")
+            choose_issue_project_name "$EXPORTED_REQUEST_JSON" || true
             ISSUE_PROJECT_DEBUG=$(extract_issue_project_debug_snippets "$EXPORTED_REQUEST_JSON")
             SAVE_DIR=$(build_save_dir "$ISSUE_ID" "$ISSUE_PROJECT_NAME")
         fi
@@ -1451,10 +1800,12 @@ prepare_save_dir
 echo "======================================"
 echo "开始下载 Feishu Issue: $ISSUE_ID"
 echo "Issue 链接: $ISSUE_URL"
+echo "项目参数: ${RELATED_PROJECT_NAME:-<empty>}"
 echo "ISSUE_PROJECT_NAME: ${ISSUE_PROJECT_NAME:-<empty>}"
 echo "项目字段命中片段: ${ISSUE_PROJECT_DEBUG:-[]}"
 echo "保存目录: $SAVE_DIR"
 echo "======================================"
+DOWNLOAD_ALL_START_TIME=$(date +%s)
 
 mapfile -t ATTACHMENTS < <(collect_attachment_entries "${TEMP_JSON_FILES[@]}")
 COUNT=${#ATTACHMENTS[@]}
@@ -1486,7 +1837,14 @@ from urllib.parse import unquote
 print(unquote(sys.argv[1]))
 PYNAME
 )
-    filepath="${SAVE_DIR}/${filename}"
+    if [[ "$url" == https://jira-shzj.auto-link.com.cn/* ]]; then
+        mkdir -p "${SAVE_DIR}/jira_file"
+        filename="$(allocate_hprof_save_filename "${SAVE_DIR}/jira_file" "$filename")"
+        filepath="${SAVE_DIR}/jira_file/${filename}"
+    else
+        filename="$(allocate_hprof_save_filename "$SAVE_DIR" "$filename")"
+        filepath="${SAVE_DIR}/${filename}"
+    fi
 
     if should_skip_filtered_attachment "$filename"; then
         echo "跳过过滤附件: $filename"
@@ -1511,13 +1869,16 @@ done
 cd "$SAVE_DIR" || exit 1
 shopt -s nullglob nocaseglob
 extract_archives_recursively
+chmod -R u+rwX . 2>/dev/null || true
+extract_gzip_logs
 rehome_top_level_groups
 fix_logcat_permissions
 
 shopt -u nullglob nocaseglob
 cd - >/dev/null || exit 1
 
+DOWNLOAD_ALL_END_TIME=$(date +%s)
+echo "下载完成，总耗时: $(format_duration $(( DOWNLOAD_ALL_END_TIME - DOWNLOAD_ALL_START_TIME )))"
 echo
-echo "下载完成"
 echo "当前目录内容:"
 ls -lh "$SAVE_DIR" 2>/dev/null || echo "目录为空"

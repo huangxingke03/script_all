@@ -16,8 +16,10 @@ ensure_device_ready "$DEVICE_SERIAL"
 prepare_gradle_build "$PROJECT_DIR"
 
 echo "当前台架设备: $DEVICE_SERIAL"
-adb -s "$DEVICE_SERIAL" root
-adb -s "$DEVICE_SERIAL" remount
+echo "覆盖安装不依赖 /system 可写，跳过 remount"
 echo "覆盖安装语音设置最新包"
-adb -s "$DEVICE_SERIAL" install -r -d "$APK_PATH"
+if ! adb_cmd 120 install -r -d "$APK_PATH"; then
+    echo "错误: 安装语音设置测试包失败或超时"
+    exit 1
+fi
 echo "安装完成"

@@ -13,6 +13,13 @@ _voice_bt_click_completion() {
 
     compopt +o default +o bashdefault +o dirnames +o filenames 2>/dev/null
 
+
+    # 已输入完整 -s 但尚未空格时，先补出 -s（由 bash 加空格），下一次 Tab 再列设备
+    if [ "${cur,,}" = "-s" ] && [ "${prev,,}" != "-s" ]; then
+        COMPREPLY=("-s")
+        return 0
+    fi
+
     if [ "${prev}" = "-s" ]; then
         [[ "${device_query}" == */* ]] && device_query=""
         COMPREPLY=()
@@ -62,7 +69,7 @@ voice_bt_click_completion_repair() {
         complete -r "${command_name}" 2>/dev/null || true
     done
     for command_name in "${commands[@]}"; do
-        complete -o nospace -F _voice_bt_click_completion "${command_name}"
+        complete -F _voice_bt_click_completion "${command_name}"
     done
 }
 
