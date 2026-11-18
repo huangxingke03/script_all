@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# syncftu — Windows VM FileToUbuntu -> Ubuntu ~/FileToUbuntu
+# syncftu — Windows VM C:\FileToUbuntu -> Ubuntu ~/FileFromWindow
 #
 # Usage:
 #   syncftu
@@ -12,8 +12,9 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CRED="${HXKSHARE_CRED:-/home/huangxingke/.hxkshare-cred}"
-DEST="${FILETOUBUNTU_DEST:-/home/huangxingke/FileToUbuntu}"
+DEST="${FILETOUBUNTU_DEST:-/home/huangxingke/FileFromWindow}"
 VM_HOST="${FILETOUBUNTU_HOST:-192.168.122.100}"
+# Windows 唯一源目录: C:\FileToUbuntu（独立共享 \\VM\FileToUbuntu）
 SHARE_NAME="${FILETOUBUNTU_SHARE:-FileToUbuntu}"
 ROUTE_SCRIPT="${SCRIPT_DIR}/fix_virbr_route.sh"
 LOCK="${XDG_RUNTIME_DIR:-/tmp}/sync-filetoubuntu.lock"
@@ -27,7 +28,7 @@ usage() {
   cat <<H
 用法: syncftu [-s device_serial] [--quiet|-q] [--fix-route|-f] [-h]
   通用脚本 syncftu（与 pcatusb 无关）
-  源: \\\\${VM_HOST}\\${SHARE_NAME}
+  Windows 源: C:\\FileToUbuntu  (\\\\${VM_HOST}\\${SHARE_NAME})
   目标: ${DEST}
   -s device_serial   指定关联台架设备（可选；仅校验在线，不影响 SMB 同步）
   -q, --quiet        静默
@@ -139,10 +140,27 @@ mkdir -p "$DEST"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-log "[*] 同步 //${VM_HOST}/${SHARE_NAME} -> ${DEST}"
+log "[*] 同步 //${VM_HOST}/${SHARE_NAME} -> ${DEST}  (Windows: C:\\FileToUbuntu)"
+
+# 先确认共享可达
+if ! timeout 30 smbclient "//${VM_HOST}/${SHARE_NAME}" -U "${SMB_USER}%${SMB_PASS}" -m SMB3 \
+  -c "ls" >"$LOG" 2>&1; then
+  if ((QUIET)); then
+    exit 0
+  fi
+  die "[!] 无法访问 \\\\${VM_HOST}\\${SHARE_NAME}（应对 C:\\FileToUbuntu），详见 $LOG
+提示: 管理员运行 C:\\HxkShare\\fix_filetoubuntu_share_admin.bat 重建共享"
+fi
+
+# 拉取；空目录 mget * 报 NO_SUCH_FILE 视为成功
 if ! timeout 60 smbclient "//${VM_HOST}/${SHARE_NAME}" -U "${SMB_USER}%${SMB_PASS}" -m SMB3 \
-  -c "lcd $TMP; prompt OFF; mget *" >"$LOG" 2>&1; then
-  die "[!] smbclient 失败，详见 $LOG"
+  -c "lcd $TMP; prompt OFF; mget *" >>"$LOG" 2>&1; then
+  if ! grep -q 'NT_STATUS_NO_SUCH_FILE' "$LOG" || grep -qE 'NT_STATUS_(ACCESS_DENIED|BAD_NETWORK_NAME|LOGON_FAILURE|HOST_UNREACHABLE)' "$LOG"; then
+    if ((QUIET)); then
+      exit 0
+    fi
+    die "[!] smbclient 失败，详见 $LOG"
+  fi
 fi
 
 count=$(find "$TMP" -mindepth 1 | wc -l | tr -d ' ')

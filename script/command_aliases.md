@@ -470,7 +470,7 @@
 - Variant: `SYNCFILETOUBUNTU`
 - Variant: `sync-filetoubuntu`
 - Compatibility: `sync-filetoubuntu-from-vm.sh`
-- 中文说明：把 Windows 虚拟机 `win10-pct` 上的共享目录 `FileToUbuntu` 同步到 Ubuntu 侧栏目录 `~/FileToUbuntu`。与 `pcatusb`（9008 透传）无关。默认只同步、不删本地已有文件。公司网卡 `cnem_vnic` 常抢 `192.168.122.0/24` 路由（表现 `NT_STATUS_HOST_UNREACHABLE`）；`fixVirbrRoute` / `fix_virbr_route.sh` 用独立 table/ip rule 强制走 `virbr0`，并由系统服务 `fix-virbr-route.service` 每 15s 重刷。`syncftu` 若发现默认路由不经 `virbr0` 会自动 `--fix-route`（可能弹 pkexec）。定时静默同步用 `syncftu --quiet`。可选 `-s` 指定台架设备序列号（仅校验设备在线）。
+- 中文说明：把 Windows 虚拟机 `win10-pct` 上唯一目录 `C:\FileToUbuntu`（SMB `\\192.168.122.100\FileToUbuntu`）同步到 Ubuntu 侧栏 `~/FileFromWindow`。Ubuntu 侧不再使用 `FileToUbuntu` 目录名；宿主机 Samba 为 `\\192.168.122.1\FileFromWindow`。与 `pcatusb`（9008 透传）无关。默认只同步、不删本地已有文件。公司网卡 `cnem_vnic` 常抢 `192.168.122.0/24` 路由（表现 `NT_STATUS_HOST_UNREACHABLE`）；`fixVirbrRoute` / `fix_virbr_route.sh` 用独立 table/ip rule 强制走 `virbr0`，并由系统服务 `fix-virbr-route.service` 每 15s 重刷。`syncftu` 若发现默认路由不经 `virbr0` 会自动 `--fix-route`（可能弹 pkexec）。定时静默同步用 `syncftu --quiet`。可选 `-s` 指定台架设备序列号（仅校验设备在线）。共享丢失时管理员运行 `C:\HxkShare\fix_filetoubuntu_share_admin.bat`。
 - Tab Completion: 输入 `sync` / `SYNC` / `syncftu` / `SYNCFTU` / `syncFile` 可补到正式命令 `syncftu`（忽略大小写）。命令后的 Tab 提示 `-s`、`-q`/`--quiet`、`-f`/`--fix-route`、`-h`/`--help`；`-s` 后再 Tab 只列出当前在线设备。
 - Source: `common_script/sync_filetoubuntu.sh`，依赖同目录 `fix_virbr_route.sh`；补全逻辑在 `common_script/syncftu_completion.sh`。
 
@@ -495,7 +495,7 @@
 - 中文说明：随机日志命令支持 `-s` 选设备，`stopRandomLog` 直接复用已发布的 `startRandomLog`。
 - Common utility scripts live in `common_script/`; `update_scipt_all.sh` publishes `startIflytekPage`, `startQnxD01`, `startBootGuideKP31`, `rebootDevice`, `killSystemui`, `resetVat`, `resetVst`, `setSalesArea`, `setUUIDKP31`, `renameUsbDir`, `virtManager`, `startWin10`, `closeWin10`, `fixVirbrRoute`, and `syncftu` from there, and loads shared completion logic from the same directory.
 - 中文说明：这些通用命令都以发布到 `~/.local/bin` 的版本为准，不再依赖源码目录下的旧位置。
-- `syncftu` / `syncFileToUbuntu` 用于 Windows 虚拟机 `FileToUbuntu` → Ubuntu `~/FileToUbuntu` 文件同步；源码在 `common_script/sync_filetoubuntu.sh`，路由修复命令为 `fixVirbrRoute`（`common_script/fix_virbr_route.sh`）。与 `pcatusb` 刷机透传相互独立。
+- `syncftu` / `syncFileToUbuntu` 用于 Windows `C:\FileToUbuntu` → Ubuntu `~/FileFromWindow` 文件同步；源码在 `common_script/sync_filetoubuntu.sh`，路由修复命令为 `fixVirbrRoute`（`common_script/fix_virbr_route.sh`）。与 `pcatusb` 刷机透传相互独立。
 - `updateSciptAll` is the only local update implementation in this repo; old `updateAll` and JIRA/Feishu legacy update names are compatibility aliases to the same unified updater.
 - `update_scipt_all.sh` publishes these downloader entry points: `downloadJira`, `downloadJiraFiltered`, `downloadFeishu`, `downloadFeishuFliter`, plus helper files `download_jira_request.curl`, `download_feishu_config.sh`, `download_feishu_request_kp31.curl`, `download_feishu_request_d01.curl`, and `download_feishu_request_d01_int.curl`.
 - Jira and Feishu downloader aliases are command-name aliases only; they do not need device completion.
