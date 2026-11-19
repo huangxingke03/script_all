@@ -25,7 +25,8 @@ push_apk_via_staging() {
 
     adb_shell_root "mkdir -p $target_dir"
     adb_cmd 60 push "$APK_PATH" "$STAGING_APK_PATH"
-    adb_shell_root "cp $STAGING_APK_PATH $TARGET_APK_PATH && chmod 644 $TARGET_APK_PATH && rm -f $STAGING_APK_PATH"
+    echo "正在写入系统分区，约需数分钟"
+    adb_cmd "${SYSTEM_APK_COPY_TIMEOUT:-360}" shell "cp $STAGING_APK_PATH $TARGET_APK_PATH && chmod 644 $TARGET_APK_PATH && rm -f $STAGING_APK_PATH"
 }
 
 deploy_apk_with_retry() {
