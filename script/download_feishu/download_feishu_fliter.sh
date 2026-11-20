@@ -1,12 +1,15 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_SCRIPT="${SCRIPT_DIR}/downloadFeishu"
-if [ ! -x "${TARGET_SCRIPT}" ]; then
+SOURCE_SCRIPT="/home/huangxingke/project/Python/script/download_feishu/download_feishu.sh"
+if [ -x "${SCRIPT_DIR}/download_feishu.sh" ]; then
     TARGET_SCRIPT="${SCRIPT_DIR}/download_feishu.sh"
-fi
-if [ ! -x "${TARGET_SCRIPT}" ]; then
-    echo "错误: 未找到 ${TARGET_SCRIPT}" >&2
+elif [ -x "${SOURCE_SCRIPT}" ]; then
+    TARGET_SCRIPT="${SOURCE_SCRIPT}"
+elif [ -x "${SCRIPT_DIR}/downloadFeishu" ]; then
+    TARGET_SCRIPT="${SCRIPT_DIR}/downloadFeishu"
+else
+    echo "错误: 未找到 downloadFeishu" >&2
     exit 1
 fi
 

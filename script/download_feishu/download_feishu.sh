@@ -992,6 +992,34 @@ adapt_latest_project_prefix() {
     return 1
 }
 
+project_prefix_from_related_name() {
+    local related="$1"
+    local prefix
+
+    # 右舵只去掉 CHERY 前缀：CHERY-D01-P-INT-RIGHT → D01-P-INT-RIGHT。
+    # 要先于 D01-P 短匹配，否则会被收成 D01-P。
+    if prefix=$(adapt_right_hand_project_name "$related"); then
+        printf '%s\n' "$prefix"
+        return 0
+    fi
+    if prefix=$(adapt_latest_project_prefix "$related"); then
+        printf '%s\n' "$prefix"
+        return 0
+    fi
+    if prefix=$(detect_project_name_from_text "$related"); then
+        printf '%s\n' "$(normalize_project_name "$prefix")"
+        return 0
+    fi
+    prefix=$(normalize_project_name "$related")
+    case "$prefix" in
+        KP31_INT|KP31|D01-FL1|D01-P|D01)
+            printf '%s\n' "$prefix"
+            return 0
+            ;;
+    esac
+    return 1
+}
+
 choose_issue_project_name() {
     local issue_json="$1"
     local related prefix inferred
@@ -999,7 +1027,7 @@ choose_issue_project_name() {
     related=$(resolve_vehicle_project_name "$issue_json" || true)
     if [ -n "$related" ]; then
         RELATED_PROJECT_NAME="$related"
-        if prefix=$(adapt_latest_project_prefix "$related"); then
+        if prefix=$(project_prefix_from_related_name "$related"); then
             ISSUE_PROJECT_NAME="$prefix"
             return 0
         fi
