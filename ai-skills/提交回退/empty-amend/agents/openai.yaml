@@ -1,0 +1,3 @@
+interface:
+  display_name: "Empty Amend"
+  short_description: "Amend HEAD with --no-edit"

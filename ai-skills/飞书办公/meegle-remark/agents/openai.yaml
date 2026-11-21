@@ -1,0 +1,6 @@
+interface:
+  display_name: "填写飞书项目备注"
+  short_description: "把备注写到飞书项目工作项评论"
+  icon_small: "💬"
+  icon_large: "💬"
+  default_prompt: "帮我填写飞书项目备注"

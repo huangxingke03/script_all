@@ -1,0 +1,4 @@
+interface:
+  display_name: "新对话"
+  short_description: "在当前项目创建并打开一轮不携带历史的新对话"
+  default_prompt: "Use $new-chat to start a fresh conversation in this project."

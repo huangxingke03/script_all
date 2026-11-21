@@ -1,0 +1,3 @@
+interface:
+  display_name: "KP31中英文资源查询"
+  short_description: "Query KP31 Chinese/English UI strings from Feishu"

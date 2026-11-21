@@ -1,0 +1,19 @@
+{
+  "recorded_at": "2026-11-03T13:44:00+0800",
+  "source_selector": "AndroidStudio2025.2.3",
+  "ui_font_size": "17.0",
+  "ui_font_scale": "1.0",
+  "ui_font_face": "Inter",
+  "override_laf_fonts": "true",
+  "editor_font_size": "15",
+  "editor_font_size_2d": "15.0",
+  "terminal_font_size": "15",
+  "terminal_font_size_2d": "15.0",
+  "console_font_size": null,
+  "console_font_size_2d": null,
+  "notes": {
+    "fontSizeToResetEditor": "13.0",
+    "fontSizeToResetConsole": "13.0",
+    "presentationModeIdeScale": "1.75"
+  }
+}

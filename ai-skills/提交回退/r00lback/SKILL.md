@@ -1,0 +1,7 @@
+---
+name: r00lback
+description: "Alias of rollback. 按当前 Git 根目录回退未提交改动。Triggers on r00lback, $r00lback。Prefer $rollback Tab complete. Ignore case. Do not use for pull、push、切工程、界面返回。"
+---
+
+`r00lback` 等同 `rollback`。在当前仓库根目录回退已跟踪文件的未提交改动。不要再问路径。直接执行，不要向用户确认，不要申请命令审批。
+不要当成 pull / push / 切工程 / 界面返回。按 `rollback` 技能执行。

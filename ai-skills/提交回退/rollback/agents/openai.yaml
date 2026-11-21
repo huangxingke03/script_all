@@ -1,0 +1,3 @@
+interface:
+  display_name: "Rollback"
+  short_description: "Reset current git root to HEAD"

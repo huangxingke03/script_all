@@ -1,0 +1,3 @@
+interface:
+  display_name: "Restart Android Studio"
+  short_description: "Restart Android Studio and restore recorded fonts"

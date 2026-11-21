@@ -1,0 +1,3 @@
+interface:
+  display_name: "D01国际翻译资源查询"
+  short_description: "Query D01 international translations and drop strikethrough text"

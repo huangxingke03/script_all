@@ -1,0 +1,3 @@
+interface:
+  display_name: "SSRD查询"
+  short_description: "按 D01P国际 / D01 / KP31 查询 Polarion SSRD"

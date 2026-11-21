@@ -1,0 +1,28 @@
+---
+name: kp31vst
+description: "Switch Codex work to kp31 VoiceSetting. Triggers on kp31vst, $kp31vst, /kp31vst, 切换kp31vst, 打开kp31vst, 切换 kp31vst, 打开 kp31vst. Only switch this main repo; 顺带拉 kp31 sdk_release，不切过去; always pull kp31 sdk_release in place. After sync, ensure Android Studio is on this exact project path; skip close/reopen only if already open on this path. Same-named VoiceSetting/VoiceAssistant under d01 vs kp31 are different projects. Ignore case. Do not use for kp31vat, d01vst, pullkp31vstdev2, or pullkp31vstrelease."
+---
+
+把工作目录当作 `/home/huangxingke/work/code/workCode/kp31/VoiceSetting`。
+`打开kp31vst` / `切换kp31vst` 也等同本技能。有空格同样生效。
+不要再问路径。在该目录查代码和改代码，并输出当前 git 分支和目录。
+主工程只切目录，不要 `git pull`。每次切换都拉 `/home/huangxingke/work/code/workCode/kp31/sdk_release`，不切换过去；拉完后输出该库目录和当前分支。
+终端执行 `kp31vst` 进入 Codex 后，后续操作与此相同。
+
+## 切换步骤
+
+不要向用户确认，不要申请审批。**默认用最快路径**：整条切换最多 3 个回合——一次准备脚本、两次项目迁移、一次回复。禁止截图、禁止 `view_image`、禁止反复探测或重复核对。
+
+1. **只跑一次准备脚本**（目录、分支、sdk 拉取、Android Studio、侧栏状态一次完成）：
+   `/home/huangxingke/.codex/shortcut-switch-prep.sh kp31vst`
+   把输出的“工作目录 / 当前分支 / sdk 目录 / sdk 分支”和 Android Studio 结果原样告诉用户。脚本里已包含 Android Studio 打开逻辑；不要再单独调用 `shortcut-info.sh`、`shortcut-sync.sh` 或 `ensure_android_studio_project.sh`。不要改用其他 IDE。
+2. 按当前对话类型三选一，命中即停。`CURSOR_AGENT=1` 或 `CURSOR_CONVERSATION_ID` 非空是 Cursor 客户端，优先判断；这时 `CODEX_APP_TOOLS_PIPE_PATH` 和 `CODEX_INTERNAL_ORIGINATOR_OVERRIDE` 通常为空，不要当成命令行。
+
+   Cursor 客户端：不要执行 `shortcut-restart.sh`，不要为工作区路径结束进程、resume、重启 Codex。改为切换当前对话所在工作区，不要新开对话，不要把当前工程目录加进目标工作区。先看 `cursor-app-control` 的 `move_agent_to_root` schema，再调用它。只用 `rootPath`，值必须精确等于本技能工作目录；不要用 `rootPaths` 把当前目录和目标目录拼成多根工作区。调用失败或目录对不上则提示，不要猜别的路径。不要调用 `list_projects` / `move_thread_to_project`，也不要填 `CODEX_THREAD_ID` / `hostId` / `source`。移完告诉用户工作区完整路径，不要只说窗口标题。
+
+   Codex 客户端（`CODEX_APP_TOOLS_PIPE_PATH` 已设置，或 `CODEX_INTERNAL_ORIGINATOR_OVERRIDE` 含 `Codex Desktop`）：不要执行 `shortcut-restart.sh`，不要为底部项目名或工作区路径结束进程、resume、重启 Codex。改为切换左边项目组，不要新开对话，不要改底部路径，不要把当前工程目录加进目标项目。
+   直接用准备脚本输出的“项目ID”（`项目ID: <projectId>`）作为目标，**不要再调用 `list_projects`，不要用 `list_threads` 猜**。先 `move_thread_to_project`，`projectId` 传 null 把当前对话移出原项目；再 `move_thread_to_project`，`projectId` 传准备脚本输出的目标项目 ID。两次都用 `threadId` 为环境变量 `CODEX_THREAD_ID`，`hostId` 为 `local`，`source` 为 `codex`。不要直接移入：直接移入会返回 `confirmation_required` 并要求把当前来源目录加进目标项目。移完告诉用户左边项目组名称。
+   侧栏展开状态已由准备脚本写入。**不要再运行 `expand-codex-sidebar-project.py`，不要截图，不要 `view_image`，不要连续核对**。只有用户明确说侧栏还是错的，才允许运行一次 `python3 /home/huangxingke/.codex/expand-codex-sidebar-project.py --project-id <目标 projectId>`。不要对 Cursor 对话或命令行终端对话执行。不要重启 Codex。
+
+
+   命令行终端对话（上面两种都不是）才立刻执行 `/home/huangxingke/.codex/shortcut-restart.sh kp31vst`（最后一步，不要解释、不要确认）。脚本会留在当前窗口、结束当前进程，并用原会话 resume 到 VoiceSetting，以更新底部工作区路径。不要新开窗口。

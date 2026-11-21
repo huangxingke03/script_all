@@ -1,0 +1,3 @@
+interface:
+  display_name: "语音需求查询"
+  short_description: "按 D01 或 kp31 查询飞书语音助手 PRD 表格"

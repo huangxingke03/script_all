@@ -1,0 +1,27 @@
+---
+name: vehicle
+description: "Switch Codex work to Live3DLauncher. Triggers on vehicle, vehile, ve, $vehicle, /vehicle, 切换vehicle, 打开vehicle, 切换 vehicle, 打开 vehicle, 打开车设, 切换车设, 打开 车设, 切换 车设. Plain switch only changes directory: pull latest, print workdir and branch, do not open Android Studio. Also triggers when those phrases include 打开项目, spaces optional, such as 切换车设打开项目 and 切换车设 打开项目: same directory switch, then open this Android Studio project in an extra window without closing projects already open. Skip if this exact path is already open. Do not kill or restart Android Studio. Ignore case. Do not use for vmedia."
+---
+
+把工作目录当作 `/home/huangxingke/work/code/workCode/other/Live3DLauncher`。
+`打开vehicle` / `切换vehicle` / `打开车设` / `切换车设` 也等同本技能。有空格同样生效。
+不要再问路径。在该目录查代码和改代码。`vehile` 等同 `vehicle`。
+
+每次切换只跑一次准备脚本（切目录、拉最新代码、输出目录和分支；普通切换不打开 Android Studio）：
+  `/home/huangxingke/.codex/shortcut-switch-prep.sh vehicle`
+
+是否打开 Android Studio 看本条触发词，不是持久配置：
+- 普通切换只切目录。`vehicle` / `打开车设` / `切换车设`，以及带空格、忽略大小写的同等写法，都不要打开 Android Studio。`打开车设` 里的「打开」不是打开项目。
+- 只有同一条消息同时含本技能触发词和 `打开项目`（`打开` 和 `项目` 之间可以有空格）才额外打开。例如 `切换车设打开项目`、`切换车设 打开项目`、`打开车设打开项目`、`vehicle打开项目`。这时改用：
+  `/home/huangxingke/.codex/shortcut-switch-prep.sh vehicle open_project`
+  把脚本输出原样告诉用户。已打开本路径会跳过，不要重复打开；不要关闭、不要杀掉已打开的工程，不要套用 vat/vst 的先关闭再打开。不要改用其他 IDE。
+
+按当前对话类型三选一，命中即停。`CURSOR_AGENT=1` 或 `CURSOR_CONVERSATION_ID` 非空是 Cursor 客户端，优先判断；这时 `CODEX_APP_TOOLS_PIPE_PATH` 和 `CODEX_INTERNAL_ORIGINATOR_OVERRIDE` 通常为空，不要当成命令行。
+
+Cursor 客户端：不要执行 `shortcut-restart.sh`，不要为工作区路径结束进程、resume、重启 Codex。改为切换当前对话所在工作区，不要新开对话，不要把当前工程目录加进目标工作区。先看 `cursor-app-control` 的 `move_agent_to_root` schema，再调用它。只用 `rootPath`，值必须精确等于本技能工作目录；不要用 `rootPaths` 把当前目录和目标目录拼成多根工作区。调用失败或目录对不上则提示，不要猜别的路径。不要调用 `list_projects` / `move_thread_to_project`，也不要填 `CODEX_THREAD_ID` / `hostId` / `source`。移完告诉用户工作区完整路径，不要只说窗口标题。
+
+Codex 客户端（`CODEX_APP_TOOLS_PIPE_PATH` 已设置，或 `CODEX_INTERNAL_ORIGINATOR_OVERRIDE` 含 `Codex Desktop`）：不要执行 `shortcut-restart.sh`，不要为底部项目名或工作区路径结束进程、resume、重启 Codex。改为切换左边项目组，不要新开对话，不要改底部路径，不要把当前工程目录加进目标项目。
+直接用准备脚本输出的“项目ID”（`项目ID: <projectId>`）作为目标，**不要再调用 `list_projects`，不要用 `list_threads` 猜**。先 `move_thread_to_project`，`projectId` 传 null 把当前对话移出原项目；再 `move_thread_to_project`，`projectId` 传准备脚本输出的目标项目 ID。两次都用 `threadId` 为环境变量 `CODEX_THREAD_ID`，`hostId` 为 `local`，`source` 为 `codex`。不要直接移入：直接移入会返回 `confirmation_required` 并要求把当前来源目录加进目标项目。移完告诉用户左边项目组名称。
+侧栏展开状态已由准备脚本写入。**不要再运行 `expand-codex-sidebar-project.py`，不要截图，不要 `view_image`，不要连续核对**。只有用户明确说侧栏还是错的，才允许运行一次 `python3 /home/huangxingke/.codex/expand-codex-sidebar-project.py --project-id <目标 projectId>`。不要重启 Codex。
+
+命令行终端对话（上面两种都不是）才立刻执行 `/home/huangxingke/.codex/shortcut-restart.sh vehicle`（最后一步，不要解释、不要确认）。脚本会留在当前窗口、结束当前进程，并用原会话 resume 到目标目录，以更新底部工作区路径。不要新开窗口。
