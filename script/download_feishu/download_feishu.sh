@@ -94,10 +94,15 @@ if [ "$FEISHU_CURL_FORCE" != "1" ] && [ "$FEISHU_AUTO_SELECT_PROJECTS" = "1" ]; 
         last_status=1
         for candidate in "${candidate_files[@]}"; do
             echo "🔁 尝试 Feishu cURL: $(basename "$candidate")"
-            if try_download_with_curl_file "$candidate"; then
+            try_download_with_curl_file "$candidate"
+            last_status=$?
+            if [ "$last_status" -eq 0 ]; then
                 exit 0
             fi
-            last_status=$?
+            # 2 = 已解析到项目且确认无附件：不要再拿别的项目 curl 冲掉目录前缀
+            if [ "$last_status" -eq 2 ]; then
+                exit 2
+            fi
         done
         exit "$last_status"
     fi
@@ -269,6 +274,11 @@ if [ -n "$FEISHU_REQUEST_URL" ] && [[ "$FEISHU_REQUEST_URL" == *"/issue/detail/"
     ISSUE_URL="$FEISHU_REQUEST_URL"
 fi
 
+# Exported curl 里常带旧 issue id / 行尾脏字符，统一清掉并改写到本次目标 id。
+FEISHU_REQUEST_URL=$(printf '%s' "$FEISHU_REQUEST_URL" | tr -d '\r\n')
+FEISHU_REFERER=$(printf '%s' "$FEISHU_REFERER" | tr -d '\r\n')
+ISSUE_URL=$(printf '%s' "$ISSUE_URL" | tr -d '\r\n')
+
 build_curl_auth_args() {
     local url="$1"
     if [ -z "$url" ]; then
@@ -341,13 +351,22 @@ patterns = (
 
 updated = request_url
 for pattern in patterns:
-    updated, count = re.subn(pattern, r'\1' + target_issue_id, updated, count=1)
+    # Use \g<1> so IDs starting with 0-7 are not parsed as octal after \1.
+    updated, count = re.subn(pattern, rf'\g<1>{target_issue_id}', updated, count=1)
     if count:
         break
 
 print(updated, end='')
 PYURL
 }
+
+rewritten_url=$(build_target_request_url "$ISSUE_URL" "$ISSUE_ID")
+[ -n "$rewritten_url" ] && ISSUE_URL="$rewritten_url"
+rewritten_url=$(build_target_request_url "$FEISHU_REFERER" "$ISSUE_ID")
+[ -n "$rewritten_url" ] && FEISHU_REFERER="$rewritten_url"
+rewritten_url=$(build_target_request_url "$FEISHU_REQUEST_URL" "$ISSUE_ID")
+[ -n "$rewritten_url" ] && FEISHU_REQUEST_URL="$rewritten_url"
+unset rewritten_url
 
 fetch_feishu_json_from_url() {
     local api_url="$1"
@@ -1742,14 +1761,24 @@ prepare_save_dir() {
     save_parent=$(dirname "$SAVE_DIR")
     save_name=$(basename "$SAVE_DIR")
 
+    remove_existing_save_path() {
+        local existing_path="$1"
+        [ -e "$existing_path" ] || return 0
+        chmod -R u+rwX "$existing_path" 2>/dev/null || true
+        find "$existing_path" -type d -exec chmod u+rwx {} + 2>/dev/null || true
+        find "$existing_path" -type f -exec chmod u+rw {} + 2>/dev/null || true
+        rm -rf "$existing_path"
+    }
+
     if [ -d "$save_parent" ]; then
-        while IFS= read -r -d '' existing_path; do
-            [ -e "$existing_path" ] || continue
-            chmod -R u+rwX "$existing_path" 2>/dev/null || true
-            find "$existing_path" -type d -exec chmod u+rwx {} + 2>/dev/null || true
-            find "$existing_path" -type f -exec chmod u+rw {} + 2>/dev/null || true
-            rm -rf "$existing_path"
-        done < <(find "$save_parent" -maxdepth 1 \( -name "*${ISSUE_ID}*" -o -name "$save_name" \) -print0 2>/dev/null)
+        if [ "$save_name" = "$ISSUE_ID" ]; then
+            # 裸 issue id 目录：只清自己，避免误删 KP31_/D01_ 等已带前缀目录
+            remove_existing_save_path "$SAVE_DIR"
+        else
+            while IFS= read -r -d '' existing_path; do
+                remove_existing_save_path "$existing_path"
+            done < <(find "$save_parent" -maxdepth 1 \( -name "*${ISSUE_ID}*" -o -name "$save_name" \) -print0 2>/dev/null)
+        fi
     fi
 
     mkdir -p "$SAVE_DIR"
@@ -1823,8 +1852,6 @@ cleanup_temp_json_files() {
 }
 trap cleanup_temp_json_files EXIT
 
-prepare_save_dir
-
 echo "======================================"
 echo "开始下载 Feishu Issue: $ISSUE_ID"
 echo "Issue 链接: $ISSUE_URL"
@@ -1839,8 +1866,16 @@ mapfile -t ATTACHMENTS < <(collect_attachment_entries "${TEMP_JSON_FILES[@]}")
 COUNT=${#ATTACHMENTS[@]}
 if [ "$COUNT" -eq 0 ]; then
     echo "Issue 没有附件，或接口里未返回可识别的附件对象"
-    exit 1
+    # 已识别项目：视为终态，避免继续用其它项目 curl 建出裸 id 目录
+    if [ -n "$ISSUE_PROJECT_NAME" ]; then
+        exit 2
+    fi
+    # 未识别项目：交给上层换下一个 curl 再试
+    exit 3
 fi
+
+# 确认有附件后再清理/建目录，避免无附件时误删带前缀目录或留下空目录
+prepare_save_dir
 
 echo "找到 $COUNT 个附件，开始下载..."
 

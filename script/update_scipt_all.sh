@@ -487,28 +487,32 @@ ln -sf "${TARGET_DIR}/voiceAssistantT12a" "${TARGET_DIR}/voiceassistantt12a"
 ln -sf "${TARGET_DIR}/voiceAssistantT12a" "${TARGET_DIR}/voice_assistant_t12a"
 echo "更新--- ${TARGET_DIR}/voiceAssistantT12a 成功----"
 
-install_script "${VOICE_BUILD_DIR}/make_voice_assistant_api_kp31.sh" "${TARGET_DIR}/makeVoiceAssistantApiKp31"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiKp31" "${TARGET_DIR}/makevoiceAssistantApiKp31"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiKp31" "${TARGET_DIR}/makeVoiceAssistantApikp31"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiKp31" "${TARGET_DIR}/makevoiceAssistantApikp31"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiKp31" "${TARGET_DIR}/makevoiceassistantapikp31"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiKp31" "${TARGET_DIR}/make_voice_assistant_api_kp31"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiKp31" "${TARGET_DIR}/make_voice_assistant_api_kp31.sh"
-echo "更新--- ${TARGET_DIR}/makeVoiceAssistantApiKp31 成功----"
+rm -f \
+  "${TARGET_DIR}/makeVoiceAssistantApiKp31" \
+  "${TARGET_DIR}/makevoiceAssistantApiKp31" \
+  "${TARGET_DIR}/makeVoiceAssistantApikp31" \
+  "${TARGET_DIR}/makevoiceAssistantApikp31" \
+  "${TARGET_DIR}/makevoiceassistantapikp31" \
+  "${TARGET_DIR}/make_voice_assistant_api_kp31" \
+  "${TARGET_DIR}/make_voice_assistant_api_kp31.sh"
+install_script "${VOICE_BUILD_DIR}/make_voice_assistant_api_kp31.sh" "${TARGET_DIR}/makeVatApiKp31"
+echo "更新--- ${TARGET_DIR}/makeVatApiKp31 成功----"
 
-install_script "${VOICE_BUILD_DIR}/make_voice_assistant_api_d01.sh" "${TARGET_DIR}/makeVoiceAssistantApiD01"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceAssistantApiD01"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makeVoiceAssistantApiDO1"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceAssistantApiDO1"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makeVoiceAssistantApid01"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceAssistantApid01"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceassistantapid01"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makeVoiceAssistantApido1"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceAssistantApido1"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/makevoiceassistantapido1"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/make_voice_assistant_api_d01"
-ln -sf "${TARGET_DIR}/makeVoiceAssistantApiD01" "${TARGET_DIR}/make_voice_assistant_api_d01.sh"
-echo "更新--- ${TARGET_DIR}/makeVoiceAssistantApiD01 成功----"
+rm -f \
+  "${TARGET_DIR}/makeVoiceAssistantApiD01" \
+  "${TARGET_DIR}/makevoiceAssistantApiD01" \
+  "${TARGET_DIR}/makeVoiceAssistantApiDO1" \
+  "${TARGET_DIR}/makevoiceAssistantApiDO1" \
+  "${TARGET_DIR}/makeVoiceAssistantApid01" \
+  "${TARGET_DIR}/makevoiceAssistantApid01" \
+  "${TARGET_DIR}/makevoiceassistantapid01" \
+  "${TARGET_DIR}/makeVoiceAssistantApido1" \
+  "${TARGET_DIR}/makevoiceAssistantApido1" \
+  "${TARGET_DIR}/makevoiceassistantapido1" \
+  "${TARGET_DIR}/make_voice_assistant_api_d01" \
+  "${TARGET_DIR}/make_voice_assistant_api_d01.sh"
+install_script "${VOICE_BUILD_DIR}/make_voice_assistant_api_d01.sh" "${TARGET_DIR}/makeVatApiD01"
+echo "更新--- ${TARGET_DIR}/makeVatApiD01 成功----"
 
 ln -sf "${TARGET_DIR}/updateSciptAll" "${TARGET_DIR}/update_voice_build_script"
 echo "更新--- ${TARGET_DIR}/update_voice_build_script 成功----"

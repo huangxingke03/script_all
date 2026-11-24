@@ -88,4 +88,5 @@ fi
 
 echo "✅ 打包成功！"
 echo "输出文件：${OUTPUT_DIR}/${JAR_NAME}"
+echo "当前打包版本号：${SDK_VERSION}"
 ls -lh "$OUTPUT_DIR"

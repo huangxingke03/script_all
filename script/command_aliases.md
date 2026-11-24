@@ -7,7 +7,7 @@
 ### `voice_build/`
 - `voiceAssistantD01` / `voiceAssistantKp31` / `voiceAssistantT12a`：编译并推语音助手 APK
 - `voiceSettingD01` / `voiceSettingKp31`：编译并覆盖安装语音设置 APK
-- `makeVoiceAssistantApiD01` / `makeVoiceAssistantApiKp31`：本地打 VoiceAssistant API jar
+- `makeVatApiD01` / `makeVatApiKp31`：本地打 VoiceAssistant API jar
 - 共享：`voice_build_common.sh`、`voice_assistant_completion.sh`
 
 ### `common_script/`
@@ -83,30 +83,13 @@
 - Source: `voice_build/voice_setting_kp31.sh`
 
 ## Voice Assistant API KP31
-- Standard: `makeVoiceAssistantApiKp31`
-- Variant: `makevoiceAssistantApiKp31`
-- Variant: `makeVoiceAssistantApikp31`
-- Variant: `makevoiceAssistantApikp31`
-- Variant: `makevoiceassistantapikp31`
-- Variant: `make_voice_assistant_api_kp31`
-- Variant: `make_voice_assistant_api_kp31.sh`
-- 中文说明：本地打 KP31 VoiceAssistant API jar；版本可写 `1.8.7` 或三位简写 `187`。不支持 `-s`。
+- Standard: `makeVatApiKp31`
+- 中文说明：本地打 KP31 VoiceAssistant API jar；版本可写 `1.8.7` 或三位简写 `187`。不支持 `-s`。旧名 `makeVoiceAssistantApiKp31` 及其大小写、下划线别名已移除。
 - Source: `voice_build/make_voice_assistant_api_kp31.sh`
 
 ## Voice Assistant API D01
-- Standard: `makeVoiceAssistantApiD01`
-- Variant: `makevoiceAssistantApiD01`
-- Variant: `makeVoiceAssistantApiDO1`
-- Variant: `makevoiceAssistantApiDO1`
-- Variant: `makeVoiceAssistantApid01`
-- Variant: `makevoiceAssistantApid01`
-- Variant: `makevoiceassistantapid01`
-- Variant: `makeVoiceAssistantApido1`
-- Variant: `makevoiceAssistantApido1`
-- Variant: `makevoiceassistantapido1`
-- Variant: `make_voice_assistant_api_d01`
-- Variant: `make_voice_assistant_api_d01.sh`
-- 中文说明：本地打 D01 VoiceAssistant API jar；版本可写 `2.1.1` 或三位简写 `211`。不支持 `-s`。
+- Standard: `makeVatApiD01`
+- 中文说明：本地打 D01 VoiceAssistant API jar；版本可写 `2.1.1` 或三位简写 `211`。不支持 `-s`。旧名 `makeVoiceAssistantApiD01` 及其大小写、下划线别名已移除。
 - Source: `voice_build/make_voice_assistant_api_d01.sh`
 
 ## Xunfei KP31
@@ -500,7 +483,7 @@
 - `update_scipt_all.sh` publishes these downloader entry points: `downloadJira`, `downloadJiraFiltered`, `downloadFeishu`, `downloadFeishuFliter`, plus helper files `download_jira_request.curl`, `download_feishu_config.sh`, `download_feishu_request_kp31.curl`, `download_feishu_request_d01.curl`, and `download_feishu_request_d01_int.curl`.
 - Jira and Feishu downloader aliases are command-name aliases only; they do not need device completion.
 - Random log, `pullLogcatByAdb`, and `clearLogcatByAdb` variants support `-s` device selection and tab completion.
-- Voice command variants and Iflytek update command variants also support `-s` device selection and tab completion. Full Iflytek publish set from `update_iflytek/` includes: `updateD01Sys` / `updateD01SysSetting`, `updateD01IntSys` / `updateD01IntSysSetting`, `updateD01pIntSys`, `updateKp31Sys`, `updateKp31IntSys`, `updateIflytekResD01` / `updateIflytekResD01Int` / `updateIflytekResKp31`, and `replaceLocal` / `replaceLocalD01p` / `replaceOut` / `replaceOutD01p`. Resource-only shortcuts come from `update_iflytek_res_*.sh`. Voice build implementations live in `voice_build/`; `update_scipt_all.sh` publishes `voiceAssistant*`, `voiceSetting*`, `makeVoiceAssistantApiKp31`, and `makeVoiceAssistantApiD01` from there.
+- Voice command variants and Iflytek update command variants also support `-s` device selection and tab completion. Full Iflytek publish set from `update_iflytek/` includes: `updateD01Sys` / `updateD01SysSetting`, `updateD01IntSys` / `updateD01IntSysSetting`, `updateD01pIntSys`, `updateKp31Sys`, `updateKp31IntSys`, `updateIflytekResD01` / `updateIflytekResD01Int` / `updateIflytekResKp31`, and `replaceLocal` / `replaceLocalD01p` / `replaceOut` / `replaceOutD01p`. Resource-only shortcuts come from `update_iflytek_res_*.sh`. Voice build implementations live in `voice_build/`; `update_scipt_all.sh` publishes `voiceAssistant*`, `voiceSetting*`, `makeVatApiKp31`, and `makeVatApiD01` from there.
 - `updateD01Sys` / `updateD01IntSys` 会先调用对应 `*SysSetting`（只推 prop），再推讯飞资源与 APK 并重启；若只需换 `build.prop`/`build_out.prop`，直接用 `updateD01SysSetting` / `updateD01IntSysSetting`。
 - `voiceBtClick` supports `-s` device selection and tab completion. `soundBtClick` variants remain compatibility aliases.
 - `voiceBtClick` is the canonical implementation for the VoiceCommonService voice-button action.
@@ -513,16 +496,16 @@
 - `shell_refresh_hooks.sh` is loaded from `~/.bashrc` when a new Bash shell starts; it does not publish scripts, but it does define helper update functions and immediately reload current completion definitions into the shell session.
 - `update_scipt_all.sh` is the actual publisher for local commands in `~/.local/bin`; it now only ensures the single `shell_refresh_hooks.sh` entry exists in `~/.bashrc`, and no longer writes per-completion source lines there.
 - If command names or symlink targets were just updated, run `hash -r`; if completion behavior was updated, run `source ~/.bashrc` or `reload_local_completions`.
-- `makeVoiceAssistantApiKp31` and `makeVoiceAssistantApiD01` accept either a full version like `1.8.7` or a 3-digit shorthand like `187` -> `1.8.7`, `211` -> `2.1.1`.
-- `makeVoiceAssistantApiKp31` and `makeVoiceAssistantApiD01` are local jar build helpers, so they do not support `-s`; connected-device Tab completion still applies to the voice deploy commands such as `voiceAssistant*` and `voiceSetting*`.
+- `makeVatApiKp31` and `makeVatApiD01` accept either a full version like `1.8.7` or a 3-digit shorthand like `187` -> `1.8.7`, `211` -> `2.1.1`.
+- `makeVatApiKp31` and `makeVatApiD01` are local jar build helpers, so they do not support `-s`; connected-device Tab completion still applies to the voice deploy commands such as `voiceAssistant*` and `voiceSetting*`. 只发布 `makeVatApiD01` / `makeVatApiKp31`，不再保留 `makeVoiceAssistantApiD01` / `makeVoiceAssistantApiKp31`。
 - Request `.curl` 文件含登录 Cookie/Token，仅作本机请求模板；提交/推送前注意 GitHub Push Protection，勿把有效会话凭证推到公开仓库。
 
 ## Examples
 ```bash
 voiceAssistantKp31 -s <device_serial>
 voiceAssistantT12a -s <device_serial>
-makeVoiceAssistantApiKp31 187
-makeVoiceAssistantApiD01 211
+makeVatApiKp31 187
+makeVatApiD01 211
 voiceassistantkp31 -s <device_serial>
 ksui -s <device_serial>
 killsystemui -s <device_serial>
