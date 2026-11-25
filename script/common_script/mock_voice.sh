@@ -139,20 +139,62 @@ if [ -z "${VOICE_TEXT}" ]; then
     exit 1
 fi
 
-# 真实语音会把会话号留在讯飞进程里。下一次 getSemantic 会沿用这个号，
-# 捷途把云端结果当成过期丢掉，语义到不了语音助手。
-# 重启进程后会话号为空，每条文本都会生成新的任务号，连续触发也能下发。
+# 会话号为空时直接发。被占用时只在这一条开始前重启一次，连续的后面几条不再重启。
+# 这段初始化是讯飞引擎起来的时间，提前发文本会被拦截，不能跳过。
+IFLYTEK_PKG="com.iflytek.cutefly.speechclient.hmi"
+
+iflytek_pid() {
+    adb_cmd shell pidof "${IFLYTEK_PKG}" 2>/dev/null | tr -d '\r' | awk '{print $1}' || true
+}
+
+device_log_mark() {
+    adb_cmd shell date +%m-%d_%H:%M:%S.%3N | tr -d '\r' | tr '_' ' '
+}
+
+# 0 = 可以直接发；1 = 会话号被占用，需要重启
+session_is_clean() {
+    local pid="$1"
+    adb -s "${DEVICE_SERIAL}" logcat -d -s SrTraceIdHolder:I SrBusinessManager:E CarByteDanceAdapterImpl:I 2>/dev/null \
+        | python3 -c 'import sys
+pid = sys.argv[1]
+seen_init = False
+last_task = None
+lock_after = False
+for raw in sys.stdin:
+    line = raw.replace("\r", "")
+    fields = line.split()
+    if pid not in fields and f"({pid})" not in line:
+        continue
+    if "SrBusinessManager" in line and "onInitCompleted()" in line:
+        seen_init = True
+        last_task = None
+        lock_after = False
+        continue
+    if "generateTaskId:" in line:
+        last_task = line.split("generateTaskId:", 1)[1].strip()
+        lock_after = False
+        continue
+    if "SrTraceIdHolder" in line and ("lockNewSession" in line or "fillIfAbsent" in line):
+        lock_after = True
+if lock_after:
+    sys.exit(1)
+if last_task and last_task.startswith("d01fl_"):
+    sys.exit(0)
+if seen_init and not last_task:
+    sys.exit(0)
+sys.exit(1)' "${pid}"
+}
+
 reset_iflytek_session() {
-    local pkg="com.iflytek.cutefly.speechclient.hmi"
     local old_pid new_pid mark i hit
-    old_pid="$(adb_cmd shell pidof "${pkg}" 2>/dev/null | tr -d '\r' | awk '{print $1}' || true)"
-    mark="$(adb_cmd shell date +%m-%d_%H:%M:%S.000 | tr -d '\r' | tr '_' ' ')"
+    old_pid="$(iflytek_pid)"
+    mark="$(device_log_mark)"
     if [ -n "${old_pid}" ]; then
         adb_cmd shell su 0 kill -9 "${old_pid}"
     fi
     new_pid=""
     for i in $(seq 1 40); do
-        new_pid="$(adb_cmd shell pidof "${pkg}" 2>/dev/null | tr -d '\r' | awk '{print $1}' || true)"
+        new_pid="$(iflytek_pid)"
         if [ -n "${new_pid}" ] && [ "${new_pid}" != "${old_pid}" ]; then
             break
         fi
@@ -177,16 +219,29 @@ reset_iflytek_session() {
     exit 1
 }
 
-# 下一次触发会重启讯飞进程。结果还在回传时重启，捷途会丢掉这次语义。
-# 所以本条要等到语音助手打出 dispatchSemantic 再返回。
+# 只认本条文本发出之后的 dispatchSemantic，避免把上一条当成这一条。
 wait_semantic_dispatched() {
     local mark="$1"
-    local i hit
+    local text="$2"
+    local i result
     for i in $(seq 1 40); do
-        hit="$(adb -s "${DEVICE_SERIAL}" logcat -d -T "${mark}" -s VALog_VRManager:I \
-            | grep -a -F "dispatchSemantic : request =" \
-            | head -n 1 || true)"
-        if [ -n "${hit}" ]; then
+        result="$(adb -s "${DEVICE_SERIAL}" logcat -d -T "${mark}" -s CarByteDanceAdapterImpl:I VALog_VRManager:I \
+            | python3 -c 'import sys
+text = sys.argv[1]
+send_ts = None
+for raw in sys.stdin:
+    line = raw.replace("\r", "").rstrip("\n")
+    fields = line.split()
+    if len(fields) < 2:
+        continue
+    ts = fields[0] + " " + fields[1]
+    if "sendASRResult" in line and line.endswith("text:" + text):
+        send_ts = ts
+    if send_ts and "dispatchSemantic : request =" in line and ts >= send_ts:
+        print("ok")
+        raise SystemExit
+print("wait")' "${text}")"
+        if [ "${result}" = "ok" ]; then
             return 0
         fi
         sleep 0.3
@@ -201,8 +256,14 @@ REMOTE_CMD="$(build_remote_command "${VOICE_TEXT}" "${WAKE_DIRECTION}")"
 echo "当前台架设备: ${DEVICE_SERIAL} (${DEVICE_NAME})"
 echo "唤醒方位: ${WAKE_DIRECTION_LABEL} (${WAKE_DIRECTION})"
 echo "模拟语音指令: ${VOICE_TEXT}"
-reset_iflytek_session
-DISPATCH_MARK="$(adb_cmd shell date +%m-%d_%H:%M:%S.000 | tr -d '\r' | tr '_' ' ')"
+CURRENT_PID="$(iflytek_pid)"
+if [ -n "${CURRENT_PID}" ] && session_is_clean "${CURRENT_PID}"; then
+    echo "直接下发"
+else
+    echo "会话号被占用，重新初始化"
+    reset_iflytek_session
+fi
+DISPATCH_MARK="$(device_log_mark)"
 adb_cmd shell "${REMOTE_CMD}"
-wait_semantic_dispatched "${DISPATCH_MARK}"
+wait_semantic_dispatched "${DISPATCH_MARK}" "${VOICE_TEXT}"
 echo "已发送模拟语音指令"
