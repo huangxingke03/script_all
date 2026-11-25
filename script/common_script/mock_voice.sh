@@ -53,7 +53,7 @@ def sq(value: str) -> str:
 uri = (
     "vr://com.iflytek.autofly.vr/interaction/getSemantic?text="
     + uri_escape(text)
-    + "&mode=2"
+    + "&mode=1"
 )
 # WakeUpReceiver 监听 vr://com.iflytek.autofly.vr/sr/status/start?direction=
 wake_uri = (
@@ -139,6 +139,61 @@ if [ -z "${VOICE_TEXT}" ]; then
     exit 1
 fi
 
+# 真实语音会把会话号留在讯飞进程里。下一次 getSemantic 会沿用这个号，
+# 捷途把云端结果当成过期丢掉，语义到不了语音助手。
+# 重启进程后会话号为空，每条文本都会生成新的任务号，连续触发也能下发。
+reset_iflytek_session() {
+    local pkg="com.iflytek.cutefly.speechclient.hmi"
+    local old_pid new_pid mark i hit
+    old_pid="$(adb_cmd shell pidof "${pkg}" 2>/dev/null | tr -d '\r' | awk '{print $1}' || true)"
+    mark="$(adb_cmd shell date +%m-%d_%H:%M:%S.000 | tr -d '\r' | tr '_' ' ')"
+    if [ -n "${old_pid}" ]; then
+        adb_cmd shell su 0 kill -9 "${old_pid}"
+    fi
+    new_pid=""
+    for i in $(seq 1 40); do
+        new_pid="$(adb_cmd shell pidof "${pkg}" 2>/dev/null | tr -d '\r' | awk '{print $1}' || true)"
+        if [ -n "${new_pid}" ] && [ "${new_pid}" != "${old_pid}" ]; then
+            break
+        fi
+        new_pid=""
+        sleep 0.25
+    done
+    if [ -z "${new_pid}" ]; then
+        echo "错误: 讯飞语音没有重新启动" >&2
+        exit 1
+    fi
+    for i in $(seq 1 80); do
+        hit="$(adb -s "${DEVICE_SERIAL}" logcat -d -T "${mark}" \
+            | grep -a -F "${new_pid}" \
+            | grep -a -F "SrBusinessManager: onInitCompleted()" \
+            | head -n 1 || true)"
+        if [ -n "${hit}" ]; then
+            return 0
+        fi
+        sleep 0.3
+    done
+    echo "错误: 讯飞语音初始化未完成" >&2
+    exit 1
+}
+
+# 下一次触发会重启讯飞进程。结果还在回传时重启，捷途会丢掉这次语义。
+# 所以本条要等到语音助手打出 dispatchSemantic 再返回。
+wait_semantic_dispatched() {
+    local mark="$1"
+    local i hit
+    for i in $(seq 1 40); do
+        hit="$(adb -s "${DEVICE_SERIAL}" logcat -d -T "${mark}" -s VALog_VRManager:I \
+            | grep -a -F "dispatchSemantic : request =" \
+            | head -n 1 || true)"
+        if [ -n "${hit}" ]; then
+            return 0
+        fi
+        sleep 0.3
+    done
+    echo "警告: 未在时限内看到语义下发" >&2
+}
+
 ensure_device_ready "${DEVICE_SERIAL}"
 DEVICE_NAME="$(get_device_display_name "${DEVICE_SERIAL}")"
 REMOTE_CMD="$(build_remote_command "${VOICE_TEXT}" "${WAKE_DIRECTION}")"
@@ -146,5 +201,8 @@ REMOTE_CMD="$(build_remote_command "${VOICE_TEXT}" "${WAKE_DIRECTION}")"
 echo "当前台架设备: ${DEVICE_SERIAL} (${DEVICE_NAME})"
 echo "唤醒方位: ${WAKE_DIRECTION_LABEL} (${WAKE_DIRECTION})"
 echo "模拟语音指令: ${VOICE_TEXT}"
+reset_iflytek_session
+DISPATCH_MARK="$(adb_cmd shell date +%m-%d_%H:%M:%S.000 | tr -d '\r' | tr '_' ' ')"
 adb_cmd shell "${REMOTE_CMD}"
+wait_semantic_dispatched "${DISPATCH_MARK}"
 echo "已发送模拟语音指令"

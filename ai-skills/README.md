@@ -168,6 +168,12 @@
 | `lark-workflow-standup-report` | 日程待办摘要：编排 calendar +agenda 和 task +get-my-tasks，生成指定日期的日程与未完成任务摘要。 | `~/.agents/skills` |
 | `meegle` | 飞书项目（Meego/Meegle）操作工具。 | `~/.agents/skills` |
 
+## 脚本安装
+
+| 技能 | 说明 | 来源 |
+| --- | --- | --- |
+| `install-latest-scripts` | 把仓库当前脚本安装到 ~/.local/bin。触发词：安装最新脚本。 | `~/.agents/skills` |
+
 ## 会话控制
 
 | 技能 | 说明 | 来源 |
