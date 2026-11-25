@@ -85,9 +85,20 @@ _mock_voice_completion() {
     fi
 
     COMPREPLY=()
-    for opt in -s -h; do
-        if [[ "${opt}" == "${cur_lc}"* ]]; then
-            COMPREPLY+=("${opt}")
+    # 还没输入指令时先补 -s / -h；指令文本之后再补唤醒方位
+    if [[ "${cur}" == -* ]] || { [ -z "${cur}" ] && [ "${COMP_CWORD}" -le 1 ]; }; then
+        for opt in -s -h; do
+            if [[ "${opt}" == "${cur_lc}"* ]]; then
+                COMPREPLY+=("${opt}")
+            fi
+        done
+        return 0
+    fi
+
+    local direction
+    for direction in 主驾 副驾 左后 右后; do
+        if [[ "${direction}" == "${cur}"* ]]; then
+            COMPREPLY+=("${direction}")
         fi
     done
     return 0

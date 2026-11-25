@@ -18,10 +18,11 @@ DEFAULT_DEVICE_SERIAL="${DEFAULT_D01_DEVICE_SERIAL}"
 DEVICE_SERIAL="${DEFAULT_DEVICE_SERIAL}"
 
 print_device_usage() {
-    echo "用法: $0 [-s device_serial] <指令文本>"
+    echo "用法: $0 [-s device_serial] <指令文本> [主驾|副驾|左后|右后]"
     echo "  -s device_serial  指定台架设备序列号，默认: ${DEFAULT_DEVICE_SERIAL}"
     echo "  指令文本          模拟语音识别文本，例如: 搜索专辑天外来物"
-    echo "  示例: $0 -s ${DEFAULT_DEVICE_SERIAL} 搜索专辑天外来物"
+    echo "  唤醒方位          放在指令文本最后。主驾=left，副驾=right，左后=left_behind，右后=right_behind。默认主驾"
+    echo "  示例: $0 -s ${DEFAULT_DEVICE_SERIAL} 查询专辑冬天里的一把火 主驾"
 }
 
 adb_cmd() {
@@ -29,12 +30,13 @@ adb_cmd() {
 }
 
 build_remote_command() {
-    python3 - "$1" <<'PY'
+    python3 - "$1" "$2" <<'PY'
 import json
 import sys
 import urllib.parse
 
 text = sys.argv[1]
+direction = sys.argv[2]
 
 def uri_escape(value: str) -> str:
     out = []
@@ -53,6 +55,11 @@ uri = (
     + uri_escape(text)
     + "&mode=2"
 )
+# WakeUpReceiver 监听 vr://com.iflytek.autofly.vr/sr/status/start?direction=
+wake_uri = (
+    "vr://com.iflytek.autofly.vr/sr/status/start?direction="
+    + uri_escape(direction)
+)
 payload = {
     "dt": "voice_pgs",
     "ps": 1,
@@ -66,7 +73,16 @@ payload = {
     "isEnd": False,
 }
 body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+# shell(uid 2000) 不能发 ACTION_VIEW，需 root 代发才能进 WakeUpReceiver
+wake_broadcast = (
+    "am broadcast -a android.intent.action.VIEW "
+    "-c android.intent.category.BROWSABLE "
+    "-p com.autolink.voiceassistant "
+    f"-d {sq(wake_uri)}"
+)
 print(
+    f"if [ \"$(id -u)\" = 0 ]; then {wake_broadcast}; "
+    f"else su 0 {wake_broadcast}; fi && sleep 0.2 && "
     "am start-foreground-service -a android.intent.action.VIEW "
     "-n com.iflytek.cutefly.speechclient.hmi/com.iflytek.auto.speechclient.sdk.wakeup.WakeUpReceiverService "
     f"-d {sq(uri)}; sleep 0.6; "
@@ -89,6 +105,33 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
+WAKE_DIRECTION="left"
+WAKE_DIRECTION_LABEL="主驾"
+if [ "$#" -ge 2 ]; then
+    case "${!#}" in
+        主驾|left)
+            WAKE_DIRECTION="left"
+            WAKE_DIRECTION_LABEL="主驾"
+            set -- "${@:1:$#-1}"
+            ;;
+        副驾|right)
+            WAKE_DIRECTION="right"
+            WAKE_DIRECTION_LABEL="副驾"
+            set -- "${@:1:$#-1}"
+            ;;
+        左后|left_behind)
+            WAKE_DIRECTION="left_behind"
+            WAKE_DIRECTION_LABEL="左后"
+            set -- "${@:1:$#-1}"
+            ;;
+        右后|right_behind)
+            WAKE_DIRECTION="right_behind"
+            WAKE_DIRECTION_LABEL="右后"
+            set -- "${@:1:$#-1}"
+            ;;
+    esac
+fi
+
 VOICE_TEXT="$*"
 if [ -z "${VOICE_TEXT}" ]; then
     echo "错误: 指令文本不能为空"
@@ -98,9 +141,10 @@ fi
 
 ensure_device_ready "${DEVICE_SERIAL}"
 DEVICE_NAME="$(get_device_display_name "${DEVICE_SERIAL}")"
-REMOTE_CMD="$(build_remote_command "${VOICE_TEXT}")"
+REMOTE_CMD="$(build_remote_command "${VOICE_TEXT}" "${WAKE_DIRECTION}")"
 
 echo "当前台架设备: ${DEVICE_SERIAL} (${DEVICE_NAME})"
+echo "唤醒方位: ${WAKE_DIRECTION_LABEL} (${WAKE_DIRECTION})"
 echo "模拟语音指令: ${VOICE_TEXT}"
 adb_cmd shell "${REMOTE_CMD}"
 echo "已发送模拟语音指令"
