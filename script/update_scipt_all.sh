@@ -589,6 +589,18 @@ rm -f \
   "${TARGET_DIR}/voicebtClick" \
   "${TARGET_DIR}/voiceBtclick" \
   "/voicebtclick" \
+  "${TARGET_DIR}/simVoice" \
+  "${TARGET_DIR}/simvoice" \
+  "${TARGET_DIR}/SimVoice" \
+  "${TARGET_DIR}/SIMVOICE" \
+  "${TARGET_DIR}/sim_voice" \
+  "${TARGET_DIR}/mockVoice" \
+  "${TARGET_DIR}/MockVoice" \
+  "${TARGET_DIR}/MOCKVOICE" \
+  "${TARGET_DIR}/mockvoice" \
+  "${TARGET_DIR}/Mockvoice" \
+  "${TARGET_DIR}/mockVOICE" \
+  "${TARGET_DIR}/mock_voice" \
   "/setUUIDKP31" \
   "/setUuidKP31" \
   "/setUUIDKp31" \
@@ -744,6 +756,15 @@ ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/soundbtClick"
 ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/soundBtclick"
 ln -sf "${TARGET_DIR}/voiceBtClick" "${TARGET_DIR}/soundbtclick"
 echo "更新--- ${TARGET_DIR}/voiceBtClick 成功----"
+
+install_script "${COMMON_TOOL_DIR}/mock_voice.sh" "${TARGET_DIR}/mockVoice"
+ln -sf "${TARGET_DIR}/mockVoice" "${TARGET_DIR}/MockVoice"
+ln -sf "${TARGET_DIR}/mockVoice" "${TARGET_DIR}/MOCKVOICE"
+ln -sf "${TARGET_DIR}/mockVoice" "${TARGET_DIR}/mockvoice"
+ln -sf "${TARGET_DIR}/mockVoice" "${TARGET_DIR}/Mockvoice"
+ln -sf "${TARGET_DIR}/mockVoice" "${TARGET_DIR}/mockVOICE"
+ln -sf "${TARGET_DIR}/mockVoice" "${TARGET_DIR}/mock_voice"
+echo "更新--- ${TARGET_DIR}/mockVoice 成功----"
 
 install_script "${COMMON_TOOL_DIR}/setSalesArea.sh" "${TARGET_DIR}/setSalesArea"
 ln -sf "${TARGET_DIR}/setSalesArea" "${TARGET_DIR}/setsalesarea"

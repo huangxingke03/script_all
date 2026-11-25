@@ -44,6 +44,11 @@ _reload_voice_bt_click_completion() {
     source "${COMMON_TOOL_DIR}/voice_bt_click_completion.sh"
 }
 
+_reload_mock_voice_completion() {
+    # shellcheck disable=SC1091
+    source "${COMMON_TOOL_DIR}/mock_voice_completion.sh"
+}
+
 _reload_rename_usb_dir_completion() {
     # shellcheck disable=SC1091
     source "${COMMON_TOOL_DIR}/rename_usb_dir_completion.sh"
@@ -108,6 +113,7 @@ reload_local_completions() {
     _reload_pull_logcat_by_adb_completion
     _reload_clear_logcat_by_adb_completion
     _reload_voice_bt_click_completion
+    _reload_mock_voice_completion
     _reload_rename_usb_dir_completion
     _reload_set_uuid_kp31_completion
     _reload_start_boot_guide_completion
@@ -157,6 +163,7 @@ _refresh_clear_logcat_after_update() {
 _refresh_voice_bt_click_after_update() {
     _run_published_script_update "$@" || return $?
     _reload_voice_bt_click_completion
+    _reload_mock_voice_completion
     _reload_rename_usb_dir_completion
     _reload_set_uuid_kp31_completion
     _reload_start_boot_guide_completion
@@ -213,6 +220,9 @@ _install_device_completion_files() {
                 stopWin10 STOPWIN10 stopwin10 stop_win10; do
         printf '%s\n' '. /home/huangxingke/project/Python/script/common_script/closeWin10_completion.sh' > "${dir}/${name}"
     done
+    for name in mockVoice MockVoice MOCKVOICE mockvoice Mockvoice mockVOICE mock_voice; do
+        printf '%s\n' '. /home/huangxingke/project/Python/script/common_script/mock_voice_completion.sh' > "${dir}/${name}"
+    done
 }
 
 _repair_device_command_completions() {
@@ -231,6 +241,8 @@ _repair_device_command_completions() {
     [[ "${spec}" == *"_startwin10_completion"* ]] || startwin10_completion_repair
     spec="$(complete -p closeWin10 2>/dev/null || true)"
     [[ "${spec}" == *"_closewin10_completion"* ]] || closewin10_completion_repair
+    spec="$(complete -p mockVoice 2>/dev/null || true)"
+    [[ "${spec}" == *"_mock_voice_completion"* ]] || mock_voice_completion_repair
     # iflytek/replace* 任一命令若被绑到 _minimal / 未注册，整组重绑
     for spec in \
         "$(complete -p replaceLocal 2>/dev/null || true)" \
@@ -317,6 +329,16 @@ if [[ -z "${_device_completion_loader_wrapped:-}" ]] && declare -F _completion_l
                     source "${COMMON_TOOL_DIR}/closeWin10_completion.sh"
                 fi
                 complete -o nosort -F _closewin10_completion "${1}" 2>/dev/null || true
+                return 124
+                ;;
+            mockvoice|mock_voice)
+                if declare -F mock_voice_completion_repair >/dev/null; then
+                    mock_voice_completion_repair
+                else
+                    # shellcheck disable=SC1091
+                    source "${COMMON_TOOL_DIR}/mock_voice_completion.sh"
+                fi
+                complete -o nosort -F _mock_voice_completion "${1}" 2>/dev/null || true
                 return 124
                 ;;
             pcatusb|pcatattach|pcat-usb-attach)
