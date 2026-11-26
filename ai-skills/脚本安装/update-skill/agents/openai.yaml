@@ -1,0 +1,3 @@
+interface:
+  display_name: "更新技能"
+  short_description: "改完技能后同步到触发读取的文件"

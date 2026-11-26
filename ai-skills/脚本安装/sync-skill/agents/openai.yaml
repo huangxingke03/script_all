@@ -1,0 +1,3 @@
+interface:
+  display_name: "同步技能"
+  short_description: "把正在触发的技能同步到仓库并提交推送"

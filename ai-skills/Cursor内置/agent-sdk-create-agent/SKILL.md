@@ -11,10 +11,10 @@ environments:
 ---
 # Create an Agent SDK agent
 
-1. **Sign in.** `npx --yes "@grok/agent-sdk@0.7.2" whoami`. Run `npx --yes "@grok/agent-sdk@0.7.2" login` only
+1. **Sign in.** `npx --yes "@grok/agent-sdk@0.7.3" whoami`. Run `npx --yes "@grok/agent-sdk@0.7.3" login` only
    when it reports no credential.
 2. **Interview.** Two `AskQuestion` rounds, then a plan gate.
-3. **Scaffold.** `npx --yes "@grok/agent-sdk@0.7.2" init`, then shape the files.
+3. **Scaffold.** `npx --yes "@grok/agent-sdk@0.7.3" init`, then shape the files.
 4. **Verify.** `validate` / `info` / `tool call`, then a model turn.
 5. **Channels.** Slack, GitHub, webhook, or schedule as chosen.
 6. **Report.** What it does, how to test it, how to deploy it.
@@ -46,7 +46,7 @@ If a linked skill is not available, read its docs page instead:
 - If `AskQuestion` is missing or the user skips, state defaults
   in one list and proceed.
 
-<!-- interview:start (generated from the npx --yes "@grok/agent-sdk@0.7.2" init questions; do not edit by hand) -->
+<!-- interview:start (generated from the npx --yes "@grok/agent-sdk@0.7.3" init questions; do not edit by hand) -->
 ### Round 1: identity
 
 | Question | Options | Guidance |
@@ -76,8 +76,8 @@ something". Write files only after approval.
 
 | Purpose | Shape |
 | --- | --- |
-| Slack chat | `slackChannel({ envPrefix })` + suggested prompts. `npx --yes "@grok/agent-sdk@0.7.2" slack create` mints the bot. Prefix: `~/.cursor/skills-cursor/agent-sdk-setup-slack/SKILL.md` |
-| Teams chat | `teamsChannel()`, or `teamsChannel({ envPrefix })` for one bot per agent. `npx --yes "@grok/agent-sdk@0.7.2" channels teams init` writes it for the user's Azure Bot. Setup: `~/.cursor/skills-cursor/agent-sdk-setup-teams/SKILL.md` |
+| Slack chat | `slackChannel({ envPrefix })` + suggested prompts. `npx --yes "@grok/agent-sdk@0.7.3" slack create` mints the bot. Prefix: `~/.cursor/skills-cursor/agent-sdk-setup-slack/SKILL.md` |
+| Teams chat | `teamsChannel()`, or `teamsChannel({ envPrefix })` for one bot per agent. `npx --yes "@grok/agent-sdk@0.7.3" channels teams init` writes it for the user's Azure Bot. Setup: `~/.cursor/skills-cursor/agent-sdk-setup-teams/SKILL.md` |
 | PR review with host prep | Channel `callTool` into a trimmed workspace `pr/` tree |
 | GitHub automation | `githubChannel()` hooks, replay fixtures |
 | Domain assistant | Server tools + one MCP connection + a skill |
@@ -123,7 +123,7 @@ Smells: prose builders in `.ts` (write `.md`); `bot/lib/` +
 ## Scaffold
 
 ```bash
-npx --yes "@grok/agent-sdk@0.7.2" init ./<slug>
+npx --yes "@grok/agent-sdk@0.7.3" init ./<slug>
 ```
 
 `init` writes the project, runs `npm install`, and may wait on
@@ -133,10 +133,10 @@ npx --yes "@grok/agent-sdk@0.7.2" init ./<slug>
 2. Real `instructions.md`. Replace `echo.ts`.
 3. Chosen `channels/`, `mcp-connections/`, `skills/`,
    `subagents/<id>/` (needs `description`), `schedules/`, `hooks/`.
-   Slack: `npx --yes "@grok/agent-sdk@0.7.2" slack create --dir ./<slug> --name "<Name>"`,
+   Slack: `npx --yes "@grok/agent-sdk@0.7.3" slack create --dir ./<slug> --name "<Name>"`,
    not a hand-written channel. Manual Slack app:
-   `npx --yes "@grok/agent-sdk@0.7.2" slack init --manual` (Slack CLI, or paste at
-   api.slack.com). Teams: `npx --yes "@grok/agent-sdk@0.7.2" channels teams init --dir ./<slug>
+   `npx --yes "@grok/agent-sdk@0.7.3" slack init --manual` (Slack CLI, or paste at
+   api.slack.com). Teams: `npx --yes "@grok/agent-sdk@0.7.3" channels teams init --dir ./<slug>
    --app-id <id> --tenant-id <id>` with the client secret on stdin,
    not a hand-written channel.
 4. Blank init writes `evals/evals.config.ts` (`maxConcurrency: 20`,
@@ -150,25 +150,25 @@ Stay on deps the Agent SDK already ships (`zod`,
 ## Verify
 
 ```bash
-npx --yes "@grok/agent-sdk@0.7.2" validate --dir ./<slug>
-npx --yes "@grok/agent-sdk@0.7.2" info --dir ./<slug> --json
-npx --yes "@grok/agent-sdk@0.7.2" tool call <tool> --dir ./<slug> --input '{…}'
-npx --yes "@grok/agent-sdk@0.7.2" eval --dir ./<slug> --list
+npx --yes "@grok/agent-sdk@0.7.3" validate --dir ./<slug>
+npx --yes "@grok/agent-sdk@0.7.3" info --dir ./<slug> --json
+npx --yes "@grok/agent-sdk@0.7.3" tool call <tool> --dir ./<slug> --input '{…}'
+npx --yes "@grok/agent-sdk@0.7.3" eval --dir ./<slug> --list
 npx tsc --noEmit -p ./<slug>
 ```
 
 tsx does not typecheck. Tool `execute` must return JSON-shaped
 values: object literals or `type` aliases, not `interface` types.
 
-Model turns need a Cursor credential (`CURSOR_API_KEY`, then `CURSOR_API_KEY_FILE`, then `CURSOR_SERVICE_ACCOUNT_KEY`, then `npx --yes "@grok/agent-sdk@0.7.2" login`). Without one, finish the
+Model turns need a Cursor credential (`CURSOR_API_KEY`, then `CURSOR_API_KEY_FILE`, then `CURSOR_SERVICE_ACCOUNT_KEY`, then `npx --yes "@grok/agent-sdk@0.7.3" login`). Without one, finish the
 key-free checks, confirm `run` fails with only the API-key error,
 and hand these over:
 
 ```bash
-npx --yes "@grok/agent-sdk@0.7.2" run --dir ./<slug> --message "<fixture prompt>"
-npx --yes "@grok/agent-sdk@0.7.2" serve --dir ./<slug> --mode single --dev
+npx --yes "@grok/agent-sdk@0.7.3" run --dir ./<slug> --message "<fixture prompt>"
+npx --yes "@grok/agent-sdk@0.7.3" serve --dir ./<slug> --mode single --dev
 # http://127.0.0.1:3000/playground
-npx --yes "@grok/agent-sdk@0.7.2" eval --dir ./<slug>
+npx --yes "@grok/agent-sdk@0.7.3" eval --dir ./<slug>
 ```
 
 Serve only this agent's directory. Session files land in the
@@ -177,9 +177,9 @@ project state directory (`--state-root`). That is not harness cwd.
 Finish gate. Before the report, these pass. Fix each error first:
 
 ```bash
-npx --yes "@grok/agent-sdk@0.7.2" validate --dir ./<slug>
+npx --yes "@grok/agent-sdk@0.7.3" validate --dir ./<slug>
 npx tsc --noEmit -p ./<slug>
-npx --yes "@grok/agent-sdk@0.7.2" run --dir ./<slug> --message "<realistic first message>"
+npx --yes "@grok/agent-sdk@0.7.3" run --dir ./<slug> --message "<realistic first message>"
 ```
 
 Show the reply word for word. Without a credential, `run` may fail
@@ -212,21 +212,21 @@ Fill in the real slug, env prefix, and commands.
 
 ## Test it locally
 
-Commands for `npx --yes "@grok/agent-sdk@0.7.2" dev ./<slug>` (playground URL) and
-`npx --yes "@grok/agent-sdk@0.7.2" eval --dir ./<slug>`, and what the person sees.
+Commands for `npx --yes "@grok/agent-sdk@0.7.3" dev ./<slug>` (playground URL) and
+`npx --yes "@grok/agent-sdk@0.7.3" eval --dir ./<slug>`, and what the person sees.
 
 ## Deploy it
 
 1. If the project is not in a git repository, create one and
    add a remote.
 2. Commit the project and push it to a branch.
-3. Slack only: run `npx --yes "@grok/agent-sdk@0.7.2" slack create --dir ./<slug> --env prod`.
-4. Run `npx --yes "@grok/agent-sdk@0.7.2" validate --dir ./<slug>`, then
-   `npx --yes "@grok/agent-sdk@0.7.2" deploy --dir ./<slug> --dry-run`.
-5. Run `npx --yes "@grok/agent-sdk@0.7.2" deploy --dir ./<slug>` in your own terminal.
+3. Slack only: run `npx --yes "@grok/agent-sdk@0.7.3" slack create --dir ./<slug> --env prod`.
+4. Run `npx --yes "@grok/agent-sdk@0.7.3" validate --dir ./<slug>`, then
+   `npx --yes "@grok/agent-sdk@0.7.3" deploy --dir ./<slug> --dry-run`.
+5. Run `npx --yes "@grok/agent-sdk@0.7.3" deploy --dir ./<slug>` in your own terminal.
    The first deploy prints an alias token one time. Save it in
    a password manager.
-6. Run `npx --yes "@grok/agent-sdk@0.7.2" session create --slug <slug> --message "<test>" --wait`.
+6. Run `npx --yes "@grok/agent-sdk@0.7.3" session create --slug <slug> --message "<test>" --wait`.
 7. Manage the agent at https://cursor.com/dashboard/deployed-agents.
 ```
 
@@ -239,7 +239,7 @@ token stays out of your transcript.
 Once a smoke turn passes, agree fixtures, success criteria, and a
 freeze line, then follow `~/.cursor/skills-cursor/agent-sdk-hillclimb/SKILL.md`. Seed from
 the smoke session under the project state directory. GitHub:
-snapshot `npx --yes "@grok/agent-sdk@0.7.2" github replay ... --dry-run --fixtures-dir fixtures/github`.
+snapshot `npx --yes "@grok/agent-sdk@0.7.3" github replay ... --dry-run --fixtures-dir fixtures/github`.
 
 Do not deploy or post to real Slack/GitHub beyond the smoke the
 user asked for. If the plan grows past ~10 files, cut scope.

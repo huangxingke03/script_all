@@ -1,6 +1,6 @@
 ---
 name: vehicle
-description: "Switch Codex work to Live3DLauncher. Triggers on vehicle, vehile, ve, $vehicle, /vehicle, 切换vehicle, 打开vehicle, 切换 vehicle, 打开 vehicle, 打开车设, 切换车设, 打开 车设, 切换 车设. Plain switch only changes directory: pull latest, print workdir and branch, do not open Android Studio. Also triggers when those phrases include 打开项目, spaces optional, such as 切换车设打开项目 and 切换车设 打开项目: same directory switch, then open this Android Studio project in an extra window without closing projects already open. Skip if this exact path is already open. Do not kill or restart Android Studio. Ignore case. Do not use for vmedia. Also triggers when the user manually clicks this workspace in the Cursor sidebar, or clicks the + beside it to start a chat, and the session root is already this directory."
+description: "Switch Codex work to Live3DLauncher. Triggers on vehicle, vehile, ve, $vehicle, /vehicle, 切换vehicle, 打开vehicle, 切换 vehicle, 打开 vehicle, 打开车设, 切换车设, 打开 车设, 切换 车设. Plain switch only changes directory: pull latest, print workdir and branch, do not open Android Studio. Also triggers when those phrases include 打开项目, spaces optional, such as 切换车设打开项目 and 切换车设 打开项目: same directory switch, then open this Android Studio project in an extra window without closing projects already open. Skip if this exact path is already open. Do not kill or restart Android Studio. Ignore case. Do not use for vmedia."
 ---
 
 把工作目录当作 `/home/huangxingke/work/code/workCode/other/Live3DLauncher`。
@@ -19,7 +19,7 @@ description: "Switch Codex work to Live3DLauncher. Triggers on vehicle, vehile, 
 按当前对话类型三选一，命中即停。`CURSOR_AGENT=1` 或 `CURSOR_CONVERSATION_ID` 非空是 Cursor 客户端，优先判断；这时 `CODEX_APP_TOOLS_PIPE_PATH` 和 `CODEX_INTERNAL_ORIGINATOR_OVERRIDE` 通常为空，不要当成命令行。
 
 Cursor 客户端：不要执行 `shortcut-restart.sh`，不要为工作区路径结束进程、resume、重启 Codex。不要新开对话，不要调用 `move_agent_to_root` / `move_agent_to_cloned_root`，也不要用 `rootPaths`。侧栏项目只用 `车设（D01-KP31）`，目录是 `/home/huangxingke/work/code/workCode/other/Live3DLauncher`。不要再登记名为 Live3DLauncher 的项目。当前对话根目录已经是该目录时直接继续，并告诉用户这个路径。不是该目录时不要新登记，提示去侧栏打开车设（D01-KP31）。
-手动点击也是本技能的触发：用户在 Cursor 侧栏点本工作区，或点该行旁边的 + 新开对话，且当前会话根目录已经是本目录。按 Cursor 客户端规则处理。上下文里若已有本次准备脚本输出，不要再跑一遍。
+侧栏点进本目录不是切换口令。上下文里若已有本次准备脚本输出，不要再跑准备脚本，不要关闭或重新打开 Android Studio。只有用户这条消息本身是切换口令时，才按上面的切换步骤处理。
 
 Codex 客户端（`CODEX_APP_TOOLS_PIPE_PATH` 已设置，或 `CODEX_INTERNAL_ORIGINATOR_OVERRIDE` 含 `Codex Desktop`）：**不转移当前对话记录**，不调用 `list_projects` / `list_threads` / `move_thread_to_project`，不运行 `expand-codex-sidebar-project.py`，不截图，不重启 Codex。准备脚本不点侧栏。`navigate_to_codex_page` 返回后，同一回合立刻执行一次 `python3 /home/huangxingke/.codex/expand-sidebar-fast.py --dir /home/huangxingke/work/code/workCode/other/Live3DLauncher --settle 0.35`，同时收起原项目并展开新项目。只跑这一次，不要截图，不要在新对话里再跑，不改底部路径。用准备脚本输出的 `项目ID: <projectId>` 新建一个干净对话：`create_thread(prompt="在<项目名>项目继续工作", target={"type":"project", "projectId":"<projectId>", "environment":{"type":"local"}}, title="<项目名>")`。新建成功后调用一次 `navigate_to_codex_page(threadId="<threadId>")` 打开新对话。最终回复里单独一行输出 `::created-thread{threadId="<threadId>"}`，并告诉用户：已打开 <项目名> 的全新对话，新对话不携带原对话记录，原对话保留，原项目侧栏收起。**不要在新对话里重复执行切换，不要再调用 `move_thread_to_project`，不要截图或核对侧栏。**
 

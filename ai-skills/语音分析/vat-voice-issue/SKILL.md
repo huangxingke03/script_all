@@ -151,7 +151,7 @@ VoiceMediaControllerManager.pauseMusic()
 
 每次交互先查日志，命中哪种就按哪种输出，不要混打。不管哪种场景，都只列本次有效值。
 
-有效值：非空字符串、数字（含 `0`）、布尔（`true`/`false`）。不要列 `null`、`""`、`[]`、`{}`、缺字段。`operation` 例外：没有下发（日志为 `null`、空字符串、或缺字段）仍输出 `operation = null`，不要省略。`extraData` / `requestId` 若是 JSON 字符串，展开后按同样规则列内层有效字段，不要整段 JSON 原样贴出。嵌套对象同样只列有效值。等号前后加空格。示例只说明格式，字段以本次为准。
+有效值：非空字符串、数字（含 `0`）、布尔（`true`/`false`）。不要列 `null`、`""`、`[]`、`{}`、缺字段。`operation` 例外：没有下发（日志为 `null`、空字符串、或缺字段）仍输出 `operation = null`，不要省略。`isMediaCenterService`、`clientType` 即使日志里有有效值也不要输出。`clientType` 仍只用来判断 `isByte`，不要写成第 2 段的一行。`extraData` / `requestId` 若是 JSON 字符串，展开后按同样规则列内层有效字段，不要整段 JSON 原样贴出。嵌套对象同样只列有效值。等号前后加空格。示例只说明格式，字段以本次为准。
 
 是否字节端下发在端到端、非端到端都写，且只在 `SystemPropertyUtils.isLargeByteModel()` 为 true 时写。`isLargeByteModel()` 即 `SystemPropertiesUtils.isLargeModelVersion()`，为 `Build.isD01()` 或 `Build.isHuaweiBuildType()`。`isLargeByteModel` 不为 true 时不要写 `isByte`。场景 C、D 不写。
 
@@ -186,8 +186,6 @@ VoiceMediaControllerManager.pauseMusic()
 
 - service = musicX
 - operation = CHANGE
-- isMediaCenterService = true
-- clientType = 1
 - sid = 2a08672b-c8eb-49e9-b3ae-d40b4dfbcc43-1179
 - isByte = true
 - quality = PLUS
@@ -196,8 +194,6 @@ VoiceMediaControllerManager.pauseMusic()
 
 - service = news
 - operation = null
-- isMediaCenterService = true
-- clientType = 0
 - isByte = false
 
 场景 C：`VALog_IflytekMessageReceiver onReceive =` / `IflytekMessageReceiver: onReceive:`。`json` 为空时改用 `onReceive: base64Decode =`。关键类 `IflytekMessageReceiver`。
