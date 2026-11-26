@@ -240,6 +240,7 @@ VoiceMediaControllerManager.pauseMusic()
 - 先用本次 `VALog_Media` 的 `XxxApi` / `XxxManager` 日志缩小范围，再回代码确认该方法就是本次实际走到的分支
 - 不要写 `voiceMediaMode` / `sendMultimediaReq` / `MultimediaReqUtil` / `MediaProxyManager`：这些只是下发通道，不是本地方法名
 - 不要停在 `handleVoiceJsonData` / `MusicManager` / `RadioManager` 这类分发入口，除非它本身就是最终执行方法
+- 仅视频类，且当前目录在 `/home/huangxingke/work/code/workCode/d01` 下（本次语义由 `VoiceVideoManager.handleVoiceJsonData` 分发，`service = video`）第 3 段写两个方法，共用同一个第 3 段标题和时间，两段方法之间空一行。先写 `VoiceVideoManager` 本次语义分支实际调用的方法，再写最终业务侧执行方法。`VoiceVideoManager` 这一行写分支方法，例如 `searchArtistVideo()` / `searchVideoByName()` / `searchVideoByNameIndex()` / `openVideo()` / `playVideoBySource()`，带该方法本次有效参数；不要写 `handleVoiceJsonData`。最终业务侧方法仍按下面爱奇艺 / USB / 搜狐规则。当前目录不在该 d01 目录下时，视频也只写最终业务侧方法，不要加 `VoiceVideoManager`。音乐、电台、车控、应用、免唤醒不要加 `VoiceVideoManager` 这一行
 - 日志 `semanticLevelFirst/Second/Third`、`message` 提供数值和传参
 - `TYPE_*` 名按本次本地对象反查，不要写死音乐或视频：
   - `MediaSemantic` → `QGMaterialUI-release.aar` 的 `com.autolink.music.mediabean.SemanticType`
@@ -272,9 +273,24 @@ handleSeekTo()
 - minute = <日志值>
 - second = <日志值>
 
-第三方视频：`TrdControlManager` 只分发，第 3/4 段写实际落到的 Manager。无 `TYPE_*` 时写本地方法名 + 本次 API 名/枚举 + 有效参数。
+第三方视频：`TrdControlManager` 只分发，第 3/4 段写实际落到的 Manager。无 `TYPE_*` 时写本地方法名 + 本次 API 名/枚举 + 有效参数。仅当前目录在 `/home/huangxingke/work/code/workCode/d01` 下的视频类，按上面的规则在最终方法前再加一行 `VoiceVideoManager` 语义分支方法；其他目录的视频只写最终业务侧方法。
 
 爱奇艺 `VRIqiyiManager`：`execCmd` + `QYSExecType.* = 日志cmd` + map 有效参数。从 `ArcLinkSdk` 的 `QYSExecType` / `LinkParam` 反查。
+
+视频类示例（仅当前目录在 `/home/huangxingke/work/code/workCode/d01` 下；格式参考，值不要照抄；先 `VoiceVideoManager` 分支方法，再最终业务方法）：
+
+**3. 触发业务交互时间 : yyyy-MM-dd HH:mm:ss.SSS**
+
+VoiceVideoManager.searchArtistVideo()
+
+- artist = 周星驰
+- videoName = 功夫
+
+VRIqiyiManager.execCmd()
+
+- QYSExecType.SEARCH = search
+- displayId = 0
+- param = 周星驰 功夫
 
 **3. 触发业务交互时间 : yyyy-MM-dd HH:mm:ss.SSS**
 
