@@ -29,13 +29,15 @@ metadata:
 
 句式优先级，命中即用，不要按同义句扩展。命中后只用 `showView : text` / ASR / `cloudText=` 文本包含该句式的指令，不要分析其他话术。有时间窗先套窗再过滤句式；无时间窗则在本次日志目录内找全部命中。
 
+仅命中免唤醒时，再额外认 `handWakeupAction` 的 `cmdWord`、`requestSpeechWakeup voice cmdWord`。没有 `showView` / ASR 时，指令内容用 `cmdWord`。未命中免唤醒时不要用这两条改句式。
+
 4. 用户指定了句式：用指定句式。
 5. 没有指定句式：用视频画面上显示的指令句式（语音识别/助手界面上的那句），抽帧读取，不要猜。
 6. 指定句式和视频画面句式都没有：有时间窗则输出窗口内全部轮次；只有单点时间或话术时才分析一轮。
 
-输出：规则内命中一轮输出一轮，命中多轮按指令时间顺序全部输出，每轮一套 1-5 段、轮与轮空一行。不要自行只留一轮；用户说只看前几次时再截取。有句式但窗口内或日志目录内没有该指令 → 输出 `提示：未找到该指令的日志`，结束。
+输出：规则内命中一轮输出一轮，命中多轮按指令时间顺序全部输出，每轮一套 1-5 段、轮与轮空一行。只有一轮时不要加轮次标题。多轮时每轮第 1 段前单独加一行加粗 `第N轮`，N 从 1 按时间顺序递增，例如 `第1轮`、`第2轮`。不要用有序列表，段内 1-5 编号保持不变。不要自行只留一轮；用户说只看前几次时再截取。有句式但窗口内或日志目录内没有该指令 → 输出 `提示：未找到该指令的日志`，结束。
 
-分析结论只出 1-5 段，不要输出 `日志文件` 行。内部记下命中的本地日志原文件。用户要写飞书备注时按 `meegle-remark`：默认只写正文，不上传日志；用户这句话包含「上传日志」时，分析结论和日志才合成一条（正文用本次 1-5 段，日志作同一条附件），多个日志文件先打成 zip 再上传，不要拆成两条、不要截取。无语义下发这一档备注照抄 `提示` / `提示语`，不要补写 `本地：`；有语义下发的 2-5 段备注原文照抄，不要删行。
+分析结论只出 1-5 段，多轮时再加 `第N轮`。不要输出 `日志文件` 行。内部记下命中的本地日志原文件。用户要写飞书备注时按 `meegle-remark`：默认只写正文，不上传日志；用户这句话包含「上传日志」时，分析结论和日志才合成一条（正文用本次 1-5 段，多轮含 `第N轮`，日志作同一条附件），多个日志文件先打成 zip 再上传，不要拆成两条、不要截取。无语义下发这一档备注照抄 `提示` / `提示语`，不要补写 `本地：`；有语义下发的 2-5 段备注原文照抄，不要删行。多轮备注保留 `第N轮`。
 
 ## 流程判断
 
@@ -60,14 +62,76 @@ metadata:
      - 代码已直接播报/NLG（爱奇艺 `execCmd` 后 `SUCCESS_CLOUD_NLG`，番薯 `responseOk` 后 `onResponse` 只打日志，车控/应用直接 `TtsSkillManager.onVoiceResponse`）→ 不写第 4 段，写第 5 段，标题用 `播报提示语执行时间`。
      - 否则写完第 3 段后输出 `提示：未收到多媒体返回状态码`，结束。
 5. 有返回状态码：
-   - 有播报 → 写第 5 段，标题用 `根据状态码播报提示语时间`。多次回调时按时间顺序配对：每次回调若触发了播报就写一次第 5 段，某次无播报则该次不写第 5；不要只留首次播报。
-   - 全部回调都没有播报 → 写完全部第 4 段后输出 `提示：有返回状态码但未执行播报`，结束。
+   - 有真正开播 → 写第 5 段，标题用 `根据状态码播报提示语时间`，文案和后面的 `VRResponseID` / `resultCode` / `VRResponsePacket` 按原有规则。多次回调时按时间顺序配对：每次回调若触发了播报就写一次第 5 段，某次无播报则该次不写第 5；不要只留首次播报。
+   - 没有真正开播 → 写完已有的第 4 段结束。不要写第 5 段，不要写 `提示：有返回状态码但未执行播报`，也不要写别的没播报提示。`startSpeakTag` / `tipsTtsText` 之后如果 `isNeedTTS() = false`、`speakCommText` 直接 return，或没有 `startSpeak`，都算没有播报。
 
 ## 输出模版
 
 只输出实际走到的段，不要扩写，不要补多媒体 App 侧收包日志。不要用表格。5 段标题里的时间都带年月日，格式 `yyyy-MM-dd HH:mm:ss.SSS`。不要输出 `日志文件` 行。有语义下发时 2-5 段模版不变。
 
 飞书会把 markdown 有序列表 `1.` 后面的换行吞掉，并把后续编号重置成 `1.`。标题必须写成加粗正文，不要用有序列表。段与段空一行，标题和下一行之间也空一行。
+
+多轮输出按下面这一套，不要只写轮次标题、也不要把两轮的 1-5 段连在一起。只有一轮时不要加 `第N轮`，仍从第 1 段开始。两轮及以上时：
+
+- 每轮第 1 段前单独一行加粗 `第N轮`，N 从 1 按时间顺序递增
+- `第N轮` 和该轮第 1 段标题之间空一行
+- 该轮内部仍用原来的 1-5 段，编号每轮从 1 重新开始
+- 轮与轮之间空一行
+- 某一轮提前停在 `提示：` 时，提示行写在该轮最后，不要另起一轮
+
+多轮示例（格式参考，值不要照抄）：
+
+**第1轮**
+
+**1. 指令识别时间 ：2026-11-26 10:03:00.196**
+
+指令内容：继续播放
+
+**2. 免唤醒通知收到时间 ：2026-11-26 10:03:00.196**
+
+- 免唤醒 = true
+- 免唤醒词 = 继续播放
+- 唤醒方位 = 主驾左前
+
+**3. 触发业务交互时间 : 2026-11-26 10:03:00.204**
+
+VoiceMediaControllerManager.resumeMusic()
+
+- TYPE_SEMANTIC_LEVEL_FIRST_CONTROL = 5
+- TYPE_SEMANTIC_LEVEL_SECOND_CONTROL_PLAY_PAUSE = 1500
+- TYPE_SEMANTIC_LEVEL_THIRD_RADIO_CONTROL_CONTINUE = 15002
+
+**4. 收到多媒体返回执行状态码时间 ：2026-11-26 10:03:00.220**
+
+- onSuccess ： SemanticRsp.RSP_SEMANTIC_CONTROL_OK = 6000
+
+**5. 根据状态码播报提示语时间 ： 2026-11-26 10:03:00.222**
+
+播报提示语文案 ： 好嘞
+
+**第2轮**
+
+**1. 指令识别时间 ：2026-11-26 10:03:03.184**
+
+指令内容：暂停播放
+
+**2. 免唤醒通知收到时间 ：2026-11-26 10:03:03.184**
+
+- 免唤醒 = true
+- 免唤醒词 = 暂停播放
+- 唤醒方位 = 主驾左前
+
+**3. 触发业务交互时间 : 2026-11-26 10:03:03.191**
+
+VoiceMediaControllerManager.pauseMusic()
+
+- TYPE_SEMANTIC_LEVEL_FIRST_CONTROL = 5
+- TYPE_SEMANTIC_LEVEL_SECOND_CONTROL_PLAY_PAUSE = 1500
+- TYPE_SEMANTIC_LEVEL_THIRD_RADIO_CONTROL_PAUSE = 15000
+
+**4. 收到多媒体返回执行状态码时间 ：2026-11-26 10:03:03.198**
+
+- onSuccess ： SemanticRsp.RSP_SEMANTIC_SUCCEED = 200
 
 **1. 指令识别时间 ：yyyy-MM-dd HH:mm:ss.SSS**
 
@@ -146,12 +210,15 @@ metadata:
 - operation = INSTRUCTION
 - instype = close
 
-仅适配免唤醒，原有 A/B/C 不变。场景 D：`VALog_VRManager handWakeupAction: cmdWord =`。有这条就按有语义走 2-5 段，不要写成没有语义下发。第 2 段标题改用 `免唤醒通知收到时间`，不要写 `收到语义时间`。只列本次有效值，`cmdWord` 必写；日志有 `mvwDirection` 再写。
+仅适配免唤醒，原有 A/B/C 不变。场景 D：`VALog_VRManager handWakeupAction: cmdWord =` 或 `handWakeupAction : cmdWord =`。有这条就按有语义走 2-5 段，不要写成没有语义下发。第 2 段标题改用 `2. 免唤醒通知收到时间`，不要写 `收到语义时间`。正文第一行固定写 `免唤醒 = true`，用来标明这次是免唤醒，不要省略。不写 `isByte`。第 2 段必须同时写免唤醒词和唤醒方位，不要只写词。免唤醒词取 `cmdWord`。唤醒方位取同一次 `mvwDirection`：`handWakeupAction` 没打这个值时，用 `requestSpeechWakeup voice cmdWord = ... mvwDirection:`；KP31 后排返回主页也可能打 `handWakeupAction : mvwDirection =`。方位按数值写名称，不要只写数字：`1` 主驾左前，`2` 副驾右前，`3` 左后，`4` 右后。日志没有方位时仍写这一行，值为 `未知`，不要省略。`cmdWord` 为空直接返回，写完第 2 段后输出 `提示：cmdWord 为空，未执行`，结束。`cmdWord` 没有进下面任一分支，写完第 2 段后输出 `提示：未进入免唤醒分支`，结束。
 
-**免唤醒通知收到时间 ：yyyy-MM-dd HH:mm:ss.SSS**
+没有 `showView` / ASR 时，第 1 段时间用 `requestSpeechWakeup voice cmdWord`，没有这条再用 `handWakeupAction`；指令内容写 `cmdWord`。
 
-- cmdWord = 下一首
-- mvwDirection = 4
+**2. 免唤醒通知收到时间 ：yyyy-MM-dd HH:mm:ss.SSS**
+
+- 免唤醒 = true
+- 免唤醒词 = 下一首
+- 唤醒方位 = 右后
 
 **3. 触发业务交互时间 : yyyy-MM-dd HH:mm:ss.SSS**
 
@@ -327,6 +394,48 @@ HvacProcessImpl.enableHVAC_AUTO_AC_MODE()
 
 ReplyInfo
 
+入口 D：`VALog_VRManager handWakeupAction`（免唤醒）
+
+只在命中 `handWakeupAction` 时走本入口。未命中时按原有 A/B/C，不要套用下面的分支，也不要改第 2–5 段。命中后第 1 段和第 4、第 5 段仍按原有规则；只有本入口写明的音量、返回主页、接听、挂断按这里收尾。
+
+按当前工程 `VRManager.handWakeupAction` 的 `cmdWord` 分支取第 3 段，不要把 `handWakeupAction` 写成方法名。D01 / KP31 词集不一样，以当前仓库 `WakeupWordConstant` 和这个 switch 为准，不要把另一边的词补进来。`MediaControlManager.previous()` / `next()` / `pause()` / `play()` 只是分发，第 3 段写日志里实际落到的 listener 方法。
+
+`cmdWord` 与第一跳：
+
+- `上一首` → `MediaControlManager.previous()`
+- `下一首` → `MediaControlManager.next()`
+- `暂停播放` → `MediaControlManager.pause()`
+- `继续播放` → `MediaControlManager.play()`
+- `增大音量` → `CarSoundManager.setSETTING_ADJUST_VOLUME_LITTLE()`，value 为 `3-0`
+- `减小音量` → `CarSoundManager.setSETTING_ADJUST_VOLUME_LITTLE()`，value 为 `3-1`
+- `返回主页` → 后排且吸顶屏条件成立走 `AppUtils.goRoofHome()`，否则 `VRManager.handleGoHome()`
+- `接听` → `BtPhoneManager.answerCall()`
+- `挂断` → `BtPhoneManager.rejectCall()`
+- `打开导航`：仅 D01。`VRManager.handleOpenMapByWakeup()` 之后本机 `dispatchSemantic`
+- `播放音乐`：仅 KP31。`MusicApi.voicePlayMusic()`
+
+上一首 / 下一首 / 暂停播放 / 继续播放：`MediaControlManager` 会把无参 `previous` / `next` / `pause` / `play` 分给已注册的 listener（音乐 `VoiceMediaControllerManager`、爱奇艺、USB 视频、番薯、用户手册、抖音等）。第 3 段写本次日志真正执行的那个方法，例如 `VoiceMediaControllerManager.previewMusic()` / `nextMusic()` / `pauseMusic()` / `resumeMusic()`，或对应 Manager 的 `handlePlay()` / `handlePause()` / `handleNext()` / `handlePrev()`。方法名以日志和代码为准，不要写死，也不要写 `MediaControlManager`。落到 `sendMultimediaReq` / `voiceMediaMode` 时，code 和参数按入口 A 的 `TYPE_*` 规则，第 4、第 5 段也按原规则。所有 listener 都没通过前台/焦点判断、没有真正执行 → 写完第 2 段后输出 `提示：未触发多媒体业务`，结束。
+
+增大音量 / 减小音量：第 3 段写 `CarSoundManager.setSETTING_ADJUST_VOLUME_LITTLE()`。D01 多一个空的 `VRRequestPacket`，KP31 直接传空 requestId，value 都是 `3-0`（媒体、大一点）或 `3-1`（媒体、小一点）。日志有 `setSETTING_ADJUST_VOLUME_LITTLE parsed source=` 时，追加解析后的 `source`、`adjustValue`。这条在方法里直接 `TtsSkillManager.onVoiceResponse`，不写第 4 段，第 5 段标题用 `播报提示语执行时间`。
+
+返回主页：`mvwDirection` 为 `3` 或 `4`，且 `SystemPropertyUtils.isSupportCMSM()`、`CarDisplayManager.isRoofDispalyOn()` 都成立 → `AppUtils.goRoofHome()`。否则 `VRManager.handleGoHome()`，日志有 `handleGoHome`。没有状态码、也没有播报：写完第 3 段结束，不要写第 4、第 5 段，不要写 `提示：未收到多媒体返回状态码`。
+
+接听 / 挂断：第 3 段写 `BtPhoneManager.answerCall()` 或 `BtPhoneManager.rejectCall()`，对上日志 `answerCall` / `rejectCall`。没有状态码、也没有播报时同样写完第 3 段结束，不要补第 4、第 5 段，不要写未收到状态码。
+
+打开导航：第 2 段仍是免唤醒。紧跟着的 `dispatchSemantic : request =` 是 `handleOpenMapByWakeup` 本机拼的打开应用包，不是新的一轮，也不要改成场景 A 再写一遍第 2 段。不要停在 `handleOpenMapByWakeup` / `dispatchSemantic` / `VRAppManager.dispatchSemantic` / `AppControlManager.dispatchHandle`。第 3 段写 `dispatchHandle` 最终落到的打开方法；日志里的包有 `alias` / `name` / `packageName` / `userPosition` 再列。`userPosition` 由方向转换：`1→0`，`2→1`，`3→2`，`4→3`，其他 `0`。包名以这次 `dispatchSemantic` 日志为准。之后的状态码和播报按应用打开原规则。
+
+播放音乐：第 3 段写 `MusicApi.voicePlayMusic()`。免唤醒传入 `type = 0`，日志有 `voicePlayMusic : type =` 再写这一行。`type = 0` 走 `TYPE_SEMANTIC_LEVEL_THIRD_PLAY`，不是 U 盘、也不是蓝牙。三级 code 和后面的状态码、播报按入口 A。
+
+免唤醒多媒体示例（格式参考，值不要照抄；类名和方法以本次落到的 listener 为准）：
+
+**3. 触发业务交互时间 : yyyy-MM-dd HH:mm:ss.SSS**
+
+VoiceMediaControllerManager.nextMusic()
+
+- TYPE_SEMANTIC_LEVEL_FIRST_CONTROL = <日志数值>
+- TYPE_SEMANTIC_LEVEL_SECOND_CONTROL_PLAY_SWITCH = <日志数值>
+- TYPE_SEMANTIC_LEVEL_THIRD_RADIO_CONTROL_NEXT = <日志数值>
+
 **4. 收到多媒体返回执行状态码时间 ：yyyy-MM-dd HH:mm:ss.SSS**
 
 - onFailure ： SemanticRsp.RSP_SEMANTIC_MUSIC_USER_NOT_LOGGED_IN_AND_MEMBERSHIP = 6016
@@ -394,7 +503,7 @@ ReplyInfo
 
 播报提示语文案 ： 已收藏
 
-TTS 用真正开播的内容。技能回包 `tipsText=好嘞` 若被大模型 NLG 替换，报 NLG 句，不要报「好嘞」。已进入业务并调用了 `onVoiceResponse`，但下游找不到 `ttsId` 资源、没有 `startSpeak` 时，不要因此停在第 2 段；第 5 段仍写，`播报提示语文案` 这一行不写，不要编原文。
+TTS 用真正开播的内容。技能回包 `tipsText=好嘞` 若被大模型 NLG 替换，报 NLG 句，不要报「好嘞」。没有真正开播就不写第 5 段，也不要补没播报的提示。有真正开播才写第 5 段和播报相关内容。已进入业务并调用了 `onVoiceResponse`，但下游找不到 `ttsId` 资源、没有 `startSpeak` 时，不要因此停在第 2 段；这种仍写第 5 段，`播报提示语文案` 这一行不写，不要编原文。
 
 若本次走 `TtsSkillManager.onVoiceResponse` 且日志有 `ttsId`，在播报提示语文案后再空一行写 `VRResponseID.<ttsId>`。多媒体 `TrdTTSHelper` / `R.string` 不要编 `VRResponseID`。
 
@@ -448,11 +557,12 @@ VRResponseID.open_app_2
 
 ## 怎么找
 
-先按「选哪一轮」定时间窗和句式，再查日志。时间：拍摄水印 > 句式指定时间 > 车机屏幕时钟。句式：指定句式 > 视频画面显示句式。规则内命中一轮输出一轮，命中多轮全部输出。查到指令/语义后内部记下所在日志文件（`android_log/aplog`、`aplog.001`、`logcat_*` 等），不要写进分析结论。写备注时按 `meegle-remark`：默认只写正文，不上传日志；用户这句话包含「上传日志」时才上传该文件的本地整份原件，多个日志文件先打成 zip 再上传，不要拆成两条、不要截取。仅无语义下发这一档：分析结论和备注都不要写 `本地：`；有播报再写 `提示语`，TTS 可用 `CCA-TtsHelper` `startSpeak`。有语义下发其他场景不变：不要在第 1 段写 `本地` / `提示语`，2-5 段模版和备注都不改。单点时间仍可用 `202609181427` / `14:26:56`。第 1 到第 5 段时间都写 `yyyy-MM-dd HH:mm:ss.SSS`，以日志为准。日志行只有月日时，年份从日志文件名（如 `logcat_20260918_*`）或目录名补齐。
+先按「选哪一轮」定时间窗和句式，再查日志。时间：拍摄水印 > 句式指定时间 > 车机屏幕时钟。句式：指定句式 > 视频画面显示句式。规则内命中一轮输出一轮，命中多轮全部输出，多轮按输出模版加 `第N轮`。查到指令/语义后内部记下所在日志文件（`android_log/aplog`、`aplog.001`、`logcat_*` 等），不要写进分析结论。写备注时按 `meegle-remark`：默认只写正文，不上传日志；用户这句话包含「上传日志」时才上传该文件的本地整份原件，多个日志文件先打成 zip 再上传，不要拆成两条、不要截取。仅无语义下发这一档：分析结论和备注都不要写 `本地：`；有播报再写 `提示语`，TTS 可用 `CCA-TtsHelper` `startSpeak`。有语义下发其他场景不变：不要在第 1 段写 `本地` / `提示语`，2-5 段模版和备注都不改。单点时间仍可用 `202609181427` / `14:26:56`。第 1 到第 5 段时间都写 `yyyy-MM-dd HH:mm:ss.SSS`，以日志为准。日志行只有月日时，年份从日志文件名（如 `logcat_20260918_*`）或目录名补齐。
 
 日志关键字：
 - 指令：`showView : text`、`Process ASR`、`cloudText=`、`filtered`
 - 语义：只认本地入口 `dispatchSemantic : request =`、` handleVoiceJsonData : service =`、`VALog_IflytekMessageReceiver onReceive`、`VALog_VRManager handWakeupAction`。`dispatchSemantic : functionId`、其它模块的 `handleVoiceJsonData`、云端 NLU、`JETOUR_*` 不算收到语义
+- 免唤醒补充，未命中不要用：`handWakeupAction: cmdWord` 与 `handWakeupAction : cmdWord` 都算场景 D。`requestSpeechWakeup voice cmdWord` 只补方向和指令时间。打开导航本机拼出的 `dispatchSemantic : request =` 不算新一轮
 - 多媒体：`VALog_Media`、`voiceMediaMode`、`execCmd`、`sendMediaControl`、`speedByTime`。第 3 段方法名每次按本次场景在本地代码里找，不写死；最终执行类有就补到方法前，没有不补，不限 `*Controller`。`VALog_Media` 的 `XxxApi` / `XxxManager` 日志只作线索，`voiceMediaMode` 只用来确认已下发，不要写成方法名
 - 车控/应用：`openPage`、`enableAPP_KEY`、`dispatchHandle`、`setVehicleState`、`commonEnableAndDisable`、`openOnLineMusic`
 - 返回：`onSuccess`、`onFailure`、`onError`、`rspCode`、`onQysCallback`、`onResponse`。查全本次业务窗口内全部回调，不要只取第一条；多次回调按第 4/5 段多次返回规则输出
@@ -460,6 +570,7 @@ VRResponseID.open_app_2
 
 代码 / SDK：
 - `VRManager.doDispatchSemantic`
+- `VRManager.handWakeupAction`：按 `cmdWord` 落到 `MediaControlManager` / `CarSoundManager.setSETTING_ADJUST_VOLUME_LITTLE` / `handleGoHome` / `AppUtils.goRoofHome` / `BtPhoneManager.answerCall` / `rejectCall`；D01 另有 `handleOpenMapByWakeup`，KP31 另有 `MusicApi.voicePlayMusic`。`MediaControlManager` 只分发，第 3 段写实际 listener
 - `VoiceCommonService.handleVoiceJsonData`
 - `IflytekMessageReceiver.onReceive`
 - 场景 C 第 2 段按 `AbsOperation.doOperation` / `MediaOperation.doActionForOperationCommand`：`service = ContentDTO.getService()`、`operation = ContentDTO.getOperation()`、`slots = ContentDTO.getContentSemantic().getSlots()`，只输出这三项里的有效值
